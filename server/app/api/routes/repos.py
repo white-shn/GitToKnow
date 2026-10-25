@@ -15,8 +15,8 @@ from app.services.github import GitHubError, InvalidRepoUrl, fetch_repo, parse_r
 from app.services.llm.gemma import LLMError
 from app.services.llm.overview import get_overview as load_overview
 from app.services.llm.overview import prefetch_overview
+from app.services.pr_review import review_pull_requests, review_pull_requests_ai
 from app.services.rag.index import needs_indexing, start_indexing
-from app.services.pr_review import review_pull_requests
 
 router = APIRouter()
 
@@ -84,10 +84,19 @@ def get_status(owner: str, repo: str) -> StatusResponse:
 
 
 @router.get("/{owner}/{repo}/pull-requests/review")
-def review_prs(owner: str, repo: str) -> dict:
+def review_prs(owner: str, repo: str, refresh: bool = False) -> dict:
     """Compare the repository's open PRs and recommend the safest candidate per issue."""
     try:
-        return review_pull_requests(owner, repo)
+        return review_pull_requests(owner, repo, refresh)
+    except GitHubError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+
+
+@router.get("/{owner}/{repo}/pull-requests/review/ai")
+def review_prs_ai(owner: str, repo: str, refresh: bool = False) -> dict:
+    """AI commentary on the rule-based PR review; `ai_status` says why it is missing when it is."""
+    try:
+        return review_pull_requests_ai(owner, repo, refresh)
     except GitHubError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
 

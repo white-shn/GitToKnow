@@ -144,19 +144,16 @@ def _generate_fallback(prompt: str, system: str | None, max_output_tokens: int) 
     """One completion from the optional fallback model (OpenAI-compatible chat API)."""
     settings = get_settings()
     messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
+    payload = {"model": settings.fallback_model, "messages": messages, "max_tokens": max_output_tokens}
+    if settings.fallback_model.startswith("openai/gpt-oss"):
+        # GPT-OSS spends part of its completion budget on reasoning. Low effort leaves room for the
+        # concise replies this UI needs. Other models/providers may reject these fields, so send them only here.
+        payload.update(reasoning_effort="low", include_reasoning=False)
     try:
         resp = httpx.post(
             f"{settings.fallback_base_url.rstrip('/')}/chat/completions",
             headers={"Authorization": f"Bearer {settings.fallback_api_key}"},
-            json={
-                "model": settings.fallback_model,
-                "messages": messages,
-                "max_completion_tokens": max_output_tokens,
-                # GPT-OSS uses part of its completion budget for reasoning. Low effort
-                # leaves enough room for the concise response this UI needs.
-                "reasoning_effort": "low",
-                "include_reasoning": False,
-            },
+            json=payload,
             timeout=120.0,
         )
         resp.raise_for_status()
