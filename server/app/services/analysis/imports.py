@@ -13,7 +13,8 @@ JS_EXTS = (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".vue", ".svelte")
 JS_RESOLVE_EXTS = (*JS_EXTS, ".json")
 
 _JS_IMPORT = re.compile(
-    r"""(?:\bimport|\bexport)\s+(?:[^'"()]*?\s+from\s+)?['"]([^'"\n]+)['"]"""  # import x from 'a' / import 'a' / export * from 'a'
+    # `{0,400}` bounds the scan: an unbounded lazy `*?` is quadratic on files with many `import`/`export` and no quotes
+    r"""(?:\bimport|\bexport)\s+(?:[^'"()]{0,400}?\s+from\s+)?['"]([^'"\n]+)['"]"""  # import x from 'a' / import 'a' / export * from 'a'
     r"""|\brequire\(\s*['"]([^'"\n]+)['"]\s*\)"""  # require('a')
     r"""|\bimport\(\s*['"]([^'"\n]+)['"]\s*\)"""  # import('a')
 )
