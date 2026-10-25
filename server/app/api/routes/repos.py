@@ -16,6 +16,7 @@ from app.services.llm.gemma import LLMError
 from app.services.llm.overview import get_overview as load_overview
 from app.services.llm.overview import prefetch_overview
 from app.services.rag.index import needs_indexing, start_indexing
+from app.services.pr_review import review_pull_requests
 
 router = APIRouter()
 
@@ -80,6 +81,15 @@ def get_status(owner: str, repo: str) -> StatusResponse:
     return StatusResponse(
         index_status=record.analysis.index_status, progress=record.index_progress, error=record.index_error
     )
+
+
+@router.get("/{owner}/{repo}/pull-requests/review")
+def review_prs(owner: str, repo: str) -> dict:
+    """Compare the repository's open PRs and recommend the safest candidate per issue."""
+    try:
+        return review_pull_requests(owner, repo)
+    except GitHubError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
 
 
 @router.get("/{owner}/{repo}/files/{path:path}", response_model=FileContent)
