@@ -50,14 +50,14 @@ Put your name next to a stream so nobody builds the same thing.
 - `CodeViewerDialog.jsx`: fetches a file, shows line numbers, highlights and scrolls to a line range. Used by graph node details **and** chat citations.
 
 ### E. Architecture graph + chat UI
-**Status: done** (same branch). `features/architecture/` is the React Flow graph (dagre layout, click a node to highlight its neighbours and inspect it in `NodeDetails`). `features/chat/` is the chat UI and `useChat` hook; it sends `history` with each question, turns `[n]` markers into clickable citation chips, and shows server errors inline. The AI summary and chat show an error with a Retry button until stream C implements `overview` and `chat` (they return 501 when `USE_MOCK_DATA=false`); with `USE_MOCK_DATA=true` they work against mock data.
+**Status: done** (same branch). `features/architecture/` is the Obsidian-style canvas force graph (`ForceGraph`, d3-force physics; click a node to highlight its neighbours and inspect it in `NodeDetails`). `features/chat/` is the chat UI and `useChat` hook; it sends `history` with each question, turns `[n]` markers into clickable citation chips, and shows server errors inline. The AI summary and chat show an error with a Retry button until stream C implements `overview` and `chat` (they return 501 when `USE_MOCK_DATA=false`); with `USE_MOCK_DATA=true` they work against mock data.
 
-- React Flow graph (nodes coloured by category, dagre layout), `NodeDetails` side panel (files, imports, imported-by; clicking a file opens the code viewer).
+- canvas force graph (nodes coloured by category, d3-force physics), `NodeDetails` side panel (files, imports, imported-by; clicking a file opens the code viewer).
 - Chat panel with suggested questions, citation chips (`path:start-end`) opening the code viewer, `useChat` hook sending `history` for follow-ups, loading state until `index_status` is `ready`.
 
 ## New dependencies (one person installs, then pushes; list them in the README)
 
-- Client: `@xyflow/react`, `@dagrejs/dagre`, `react-markdown`; shadcn `tabs`, `textarea`, `dialog`, `scroll-area`, `skeleton`.
+- Client: `d3-force`, `react-router-dom`, `react-markdown`; shadcn `tabs`, `textarea`, `dialog`, `scroll-area`, `skeleton`.
 - Server: `google-genai`, `httpx`, `numpy`.
 
 ## API contract
