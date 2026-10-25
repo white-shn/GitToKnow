@@ -7,6 +7,7 @@ import {
   GitBranch,
   MessagesSquare,
   Network,
+  GitPullRequest,
   RotateCcw,
   Sparkles,
   Star,
@@ -29,6 +30,7 @@ const NAV_TABS = [
   { path: '/summary', label: 'AI Summary', icon: Sparkles },
   { path: '/structure', label: 'File Structure', icon: FolderTree },
   { path: '/map', label: 'Structure Map', icon: Network },
+  { path: '/pull-requests', label: 'PR Review', icon: GitPullRequest },
 ]
 
 export default function AppNavbar({ chatOpen = false, onToggleChat }) {
