@@ -1,5 +1,6 @@
 """In-memory store for analysed repositories (no database). Keyed by repo_id = "owner/repo" (case-insensitive)."""
 
+import threading
 from dataclasses import dataclass, field
 
 from app.schemas.repo import AnalyzeResponse
@@ -12,6 +13,8 @@ class RepoRecord:
     overview: str | None = None
     index: object | None = None  # RAG index (chunks + embeddings), set by services/rag
     index_progress: float = 0.0
+    index_error: str | None = None  # why indexing failed, shown to the user
+    overview_lock: threading.Lock = field(default_factory=threading.Lock)  # one overview generation at a time
 
 
 _repos: dict[str, RepoRecord] = {}

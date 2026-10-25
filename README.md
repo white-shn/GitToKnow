@@ -83,4 +83,8 @@ _Add team members here._
 
 ## Models, libraries and AI tools
 
-_Fill in per [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) before submitting._
+**Gemma 4 via the Gemini API** (`gemma-4-26b-a4b-it`, open-weight, [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms)) writes the repository overview and answers questions about the code. It is called from [`server/app/services/llm/gemma.py`](server/app/services/llm/gemma.py) (`generate()`), with prompts in `llm/prompts.py`.
+
+**RAG:** code is split into line-window chunks and embedded with `gemini-embedding-001` (Gemini API); the most relevant chunks are retrieved by cosine similarity and given to Gemma 4, which answers with `[n]` citations that map back to file and line ranges (`server/app/services/rag/`).
+
+_Libraries, datasets and AI coding tools: fill in per [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) before submitting._
