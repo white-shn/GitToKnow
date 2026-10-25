@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,6 +17,12 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemma_model: str = "gemma-4-26b-a4b-it"
     embedding_model: str = "gemini-embedding-001"
+
+    # Optional fallback LLM, used only when Gemma 4 fails or its quota runs out. Any OpenAI-compatible chat API:
+    # xAI Grok by default, or point FALLBACK_BASE_URL/FALLBACK_MODEL at a host of an open-weight model.
+    fallback_api_key: str = Field(default="", validation_alias=AliasChoices("FALLBACK_API_KEY", "XAI_API_KEY"))
+    fallback_base_url: str = "https://api.x.ai/v1"
+    fallback_model: str = "grok-4"
 
     # Serve mock data from the repo endpoints until the real pipeline is wired up
     use_mock_data: bool = False

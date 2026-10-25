@@ -22,8 +22,8 @@ Paste a public repository URL and you get three views plus an always-available a
 1. **Fetch:** the server downloads the repository through the GitHub API (metadata plus the zipball) and keeps the text files in memory. Binaries, `node_modules`, lockfiles and huge files are skipped.
 2. **Analyse:** it builds the file tree, language breakdown, frameworks and dependencies (from `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`), classifies every file, and flags entry points, routing and config files.
 3. **Graph:** imports are parsed and resolved to real files for JavaScript/TypeScript (including `tsconfig`/`jsconfig` aliases), Python and Java. Large repos collapse into folder components.
-4. **Index (RAG):** code is split into line-window chunks (each remembers its file and line range), embedded with `gemini-embedding-001`, and stored in an in-memory vector index. Indexing runs in the background, most important files first, and chat works as soon as the first batch is ready.
-5. **Answer:** a question retrieves the most relevant chunks by cosine similarity, and **Gemma 4** answers using only those excerpts, citing them as `[n]`. Each citation maps back to a file and line range that the UI opens in a code viewer.
+4. **Index (RAG):** code is split into line-window chunks (each remembers its file and line range). Keyword (BM25) search over them is ready instantly; embeddings from `gemini-embedding-001` are then added in the background, most important files first, and blended in for semantic search. If the embedding quota runs out, chat keeps working on keyword search.
+5. **Answer:** a question retrieves the most relevant chunks (keywords plus embedding similarity), and **Gemma 4** answers using only those excerpts, citing them as `[n]`. Each citation maps back to a file and line range that the UI opens in a code viewer.
 
 ## Models, libraries and AI tools
 
@@ -33,6 +33,7 @@ Paste a public repository URL and you get three views plus an always-available a
 | --- | --- | --- |
 | **Gemma 4** `gemma-4-26b-a4b-it` (open-weight), called through the Gemini API | Repository overview and chat answers | [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms) |
 | `gemini-embedding-001` (Gemini API) | Embeddings for code retrieval. This is a hosted Google model, not open-weight | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
+| *Optional fallback:* xAI Grok (`grok-4` by default), or any OpenAI-compatible model set in `.env` | Used **only** if Gemma 4 fails or runs out of quota; the answer is labelled when it is used. The hosted Grok API is a closed model, so it does not count toward the open-source AI requirement. Gemma 4 is the primary and default model | [xAI terms](https://x.ai/legal) |
 
 **How Gemma 4 is called:** [`server/app/services/llm/gemma.py`](server/app/services/llm/gemma.py) wraps the `google-genai` SDK. `generate()` calls `models.generate_content` for the model above (with minimal thinking, which was about 3x faster than the default with equal answer quality in our tests); prompts live in [`llm/prompts.py`](server/app/services/llm/prompts.py). The overview is built in [`llm/overview.py`](server/app/services/llm/overview.py) and chat in [`rag/chat.py`](server/app/services/rag/chat.py).
 
@@ -68,6 +69,7 @@ uvicorn app.main:app --reload
 In `server/.env` set:
 
 - `GEMINI_API_KEY`: get one at https://aistudio.google.com/apikey (needed for the AI summary and chat)
+- `FALLBACK_API_KEY`: optional; enables a fallback model (xAI Grok by default) if Gemma 4 fails or runs out of quota. Leave empty to use Gemma 4 only
 - `GITHUB_TOKEN`: optional but recommended; without it GitHub allows only 60 requests per hour (a token with no scopes is enough for public repos)
 
 **Client** (http://localhost:5173)
@@ -87,7 +89,7 @@ Notes: small repositories are ready for chat in a couple of seconds. The Gemini 
 [`render.yaml`](render.yaml) defines two services: **gittoknow-api** (FastAPI, from `server/`) and **gittoknow** (the React site, built from `client/`).
 
 1. Render dashboard > **New > Blueprint**, select `white-shn/GitToKnow` and the `main` branch.
-2. When asked, enter the secrets: `GEMINI_API_KEY` (required) and `GITHUB_TOKEN` (recommended).
+2. When asked, enter the secrets: `GEMINI_API_KEY` (required), `GITHUB_TOKEN` (recommended) and optionally `FALLBACK_API_KEY`.
 3. Deploy. The site will be at `https://gittoknow.onrender.com` and the API at `https://gittoknow-api.onrender.com`.
 4. If Render adds a suffix to either name (the names are global), set `VITE_API_URL` on the site to the API's real URL and redeploy it. The API already accepts any `*.onrender.com` origin.
 

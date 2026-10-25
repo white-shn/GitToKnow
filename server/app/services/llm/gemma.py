@@ -10,6 +10,7 @@ import time
 from collections.abc import Callable, Iterator
 from functools import lru_cache
 
+import httpx
 import numpy as np
 from google import genai
 from google.genai import errors, types
@@ -76,7 +77,7 @@ def _call(fn: Callable, *args, **kwargs):
     raise LLMError(502, "The Gemini API is unavailable right now. Try again shortly.")  # pragma: no cover
 
 
-def generate(prompt: str, system: str | None = None, temperature: float = 0.2, max_output_tokens: int = 4096) -> str:
+def _generate_gemma(prompt: str, system: str | None, temperature: float, max_output_tokens: int) -> str:
     """One Gemma 4 completion. Reasoning ("thought") parts are excluded by `response.text`.
 
     Thinking is set to MINIMAL (the only level Gemma 4 accepts besides its default): in testing, answers
@@ -125,3 +126,38 @@ def embed(texts: list[str], task: str = "RETRIEVAL_QUERY") -> np.ndarray:
     """All embeddings at once, shape (len(texts), EMBED_DIMENSIONS); a dot product of two rows is cosine similarity."""
     parts = [vectors for _, vectors in embed_batches(texts, task)]
     return np.vstack(parts) if parts else np.zeros((0, EMBED_DIMENSIONS), dtype=np.float32)
+
+
+def _generate_fallback(prompt: str, system: str | None, max_output_tokens: int) -> str:
+    """One completion from the optional fallback model (OpenAI-compatible chat API)."""
+    settings = get_settings()
+    messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
+    try:
+        resp = httpx.post(
+            f"{settings.fallback_base_url.rstrip('/')}/chat/completions",
+            headers={"Authorization": f"Bearer {settings.fallback_api_key}"},
+            json={"model": settings.fallback_model, "messages": messages, "max_tokens": max_output_tokens},
+            timeout=120.0,
+        )
+        resp.raise_for_status()
+        text = (resp.json()["choices"][0]["message"]["content"] or "").strip()
+    except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
+        log.warning("Fallback model call failed: %r", exc)
+        raise LLMError(502, "Both Gemma 4 and the fallback model are unavailable right now. Try again shortly.") from exc
+    if not text:
+        raise LLMError(502, "The fallback model returned an empty response.")
+    return text
+
+
+def generate(prompt: str, system: str | None = None, temperature: float = 0.2, max_output_tokens: int = 4096) -> str:
+    """Gemma 4 first. If it fails (rate limit, outage, empty reply) and a fallback model is configured, use that
+    and say so in the answer, so the source of every answer is clear."""
+    try:
+        return _generate_gemma(prompt, system, temperature, max_output_tokens)
+    except LLMError as gemma_error:
+        settings = get_settings()
+        if not settings.fallback_api_key:
+            raise
+        log.warning("Gemma 4 failed (%s); using fallback model %s", gemma_error.detail, settings.fallback_model)
+        text = _generate_fallback(prompt, system, max_output_tokens)
+        return f"{text}" + chr(10) * 2 + f"_Answered by the fallback model ({settings.fallback_model}) because Gemma 4 was unavailable._"

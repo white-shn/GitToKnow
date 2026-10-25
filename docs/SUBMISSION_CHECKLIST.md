@@ -58,6 +58,7 @@ Add a row whenever someone uses an AI tool.
 | --- | --- | --- |
 | Gemma 4 `gemma-4-26b-a4b-it` (via Gemini API) | Repository overview and chat answers | [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms) |
 | `gemini-embedding-001` (Gemini API, hosted, not open-weight) | Embeddings for code retrieval | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
+| Optional fallback: xAI Grok `grok-4` (hosted, closed), only if Gemma 4 fails; answers are labelled | Backup text generation | [xAI terms](https://x.ai/legal) |
 
 ## 7. Final-hour rules
 
