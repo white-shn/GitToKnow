@@ -148,7 +148,15 @@ def _generate_fallback(prompt: str, system: str | None, max_output_tokens: int) 
         resp = httpx.post(
             f"{settings.fallback_base_url.rstrip('/')}/chat/completions",
             headers={"Authorization": f"Bearer {settings.fallback_api_key}"},
-            json={"model": settings.fallback_model, "messages": messages, "max_tokens": max_output_tokens},
+            json={
+                "model": settings.fallback_model,
+                "messages": messages,
+                "max_completion_tokens": max_output_tokens,
+                # GPT-OSS uses part of its completion budget for reasoning. Low effort
+                # leaves enough room for the concise response this UI needs.
+                "reasoning_effort": "low",
+                "include_reasoning": False,
+            },
             timeout=120.0,
         )
         resp.raise_for_status()

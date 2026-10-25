@@ -83,7 +83,7 @@ def _ai_review(owner: str, repo: str, groups: list[dict]) -> tuple[str | None, s
         return gemma.generate_with_fallback_model(
             prompt,
             system="Be precise, practical, and conservative. Never invent facts beyond the provided pull-request metadata.",
-            max_output_tokens=900,
+            max_output_tokens=1200,
         ), "Groq AI review"
     except gemma.LLMError as exc:
         return None, exc.detail
