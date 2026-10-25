@@ -1,57 +1,106 @@
 # GitToKnow
 
-AI-powered platform that analyses GitHub repositories and helps developers understand unfamiliar codebases.
+**Understand any GitHub codebase in minutes.** Paste a public repository URL and GitToKnow maps its structure, draws an interactive architecture graph from the real imports, writes an AI overview, and answers questions about the code with clickable references to the exact files and lines.
 
-**Stack:** React + Vite (JavaScript) / Tailwind CSS v4 / shadcn/ui / GSAP - FastAPI (Python)
+Built for **Hacktoberfest x MOSS Hack Day Udupi** (MIT Manipal, 25 October 2026). Challenges: Best Open-Source AI Project and Best Use of Gemma 4.
 
-> Built for Hacktoberfest x MOSS Hack Day Udupi. **Read [docs/](docs/) before contributing.**
+**Stack:** React + Vite (JavaScript) / Tailwind CSS v4 / shadcn/ui / GSAP, and FastAPI (Python). AI: **Gemma 4** through the Gemini API.
 
-## Docs
+## What it does
 
-| File | What's in it |
+| Tab | What you get |
 | --- | --- |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | **Start here:** what's left to build, who owns what, API contract, timeline |
-| [docs/HACKATHON_RULES.md](docs/HACKATHON_RULES.md) | Rules, schedule, AI rules and judging criteria from the rulebook |
-| [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) | Submission steps, README checklist, AI tools and models log |
-| [docs/DEV_GUIDELINES.md](docs/DEV_GUIDELINES.md) | Tech we use and don't use (JavaScript only, Tailwind only...), folder conventions |
-| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Branch model (`feat/*` to `staging` to `main`), PR and review workflow, final-hour plan |
+| **AI Summary** | A Gemma 4 written overview (what it does, tech stack, how it is organised, where to start), languages, frameworks, dependencies, and a "Start here" list of the important files with the reason each matters |
+| **File Structure** | The folder tree, searchable and filterable by category (frontend, backend, config, tests, docs); click any file to read it |
+| **Structure Map** | An interactive graph of which files import which, built from real `import` / `require` statements. Click a node to see its files, what it depends on and what uses it |
+| **Ask the Repo** | Chat about the codebase. Answers are grounded in retrieved code, cite `[n]` sources you can click to open the file at the cited lines, and follow-up questions work |
+
+## How it works
+
+1. **Fetch:** the server downloads the repository through the GitHub API (metadata plus the zipball) and keeps the text files in memory. Binaries, `node_modules`, lockfiles and huge files are skipped.
+2. **Analyse:** it builds the file tree, language breakdown, frameworks and dependencies (from `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`), classifies every file, and flags entry points, routing and config files.
+3. **Graph:** imports are parsed and resolved to real files for JavaScript/TypeScript (including `tsconfig`/`jsconfig` aliases), Python and Java. Large repos collapse into folder components.
+4. **Index (RAG):** code is split into line-window chunks (each remembers its file and line range), embedded with `gemini-embedding-001`, and stored in an in-memory vector index. Indexing runs in the background, most important files first, and chat works as soon as the first batch is ready.
+5. **Answer:** a question retrieves the most relevant chunks by cosine similarity, and **Gemma 4** answers using only those excerpts, citing them as `[n]`. Each citation maps back to a file and line range that the UI opens in a code viewer.
+
+## Models, libraries and AI tools
+
+### Models
+
+| Model | Used for | License / terms |
+| --- | --- | --- |
+| **Gemma 4** `gemma-4-26b-a4b-it` (open-weight), called through the Gemini API | Repository overview and chat answers | [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms) |
+| `gemini-embedding-001` (Gemini API) | Embeddings for code retrieval. This is a hosted Google model, not open-weight | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
+
+**How Gemma 4 is called:** [`server/app/services/llm/gemma.py`](server/app/services/llm/gemma.py) wraps the `google-genai` SDK. `generate()` calls `models.generate_content` for the model above (with minimal thinking, which was about 3x faster than the default with equal answer quality in our tests); prompts live in [`llm/prompts.py`](server/app/services/llm/prompts.py). The overview is built in [`llm/overview.py`](server/app/services/llm/overview.py) and chat in [`rag/chat.py`](server/app/services/rag/chat.py).
+
+### APIs and data
+
+- **GitHub REST API** for public repository metadata and contents (no dataset is used; everything is fetched live)
+- **Gemini API** for Gemma 4 and embeddings
+
+### Libraries and frameworks
+
+- **Client:** [React](https://react.dev) 19, [Vite](https://vite.dev), [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com) (with [Radix UI](https://www.radix-ui.com), class-variance-authority, clsx, tailwind-merge, tw-animate-css), [GSAP](https://gsap.com), [lucide-react](https://lucide.dev), [React Flow](https://reactflow.dev) (`@xyflow/react`) and [dagre](https://github.com/dagrejs/dagre) for the architecture graph, [react-markdown](https://github.com/remarkjs/react-markdown), [oxlint](https://oxc.rs)
+- **Server:** [FastAPI](https://fastapi.tiangolo.com), Uvicorn, Pydantic and pydantic-settings, [httpx](https://www.python-httpx.org), [google-genai](https://github.com/googleapis/python-genai), [NumPy](https://numpy.org)
+
+### AI coding tools
+
+- **Claude Code** (Anthropic, Claude Sonnet 5.5) was used to build much of this project: the initial client/server scaffold and dashboard, the GitHub fetching and repository analysis, the dependency graph, the Gemma 4 overview and RAG chat pipeline, the client workspace (tabs, file tree, graph view, chat UI, code viewer), the project docs, and the review and fix of the Render deployment configuration.
 
 ## Quick start
 
-Run both in separate terminals.
+You need Node 20+ and Python 3.11+. Run the server and client in separate terminals.
 
-**Server** (http://localhost:8000, docs at `/docs`)
+**Server** (http://localhost:8000, API docs at `/docs`)
 
 ```bash
 cd server
 python -m venv .venv
 .venv\Scripts\activate        # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env          # optional, defaults work
+cp .env.example .env          # then edit .env, see below
 uvicorn app.main:app --reload
 ```
+
+In `server/.env` set:
+
+- `GEMINI_API_KEY`: get one at https://aistudio.google.com/apikey (needed for the AI summary and chat)
+- `GITHUB_TOKEN`: optional but recommended; without it GitHub allows only 60 requests per hour (a token with no scopes is enough for public repos)
 
 **Client** (http://localhost:5173)
 
 ```bash
 cd client
 npm install
-cp .env.example .env          # optional, defaults work
 npm run dev
 ```
 
-The header badge shows **API online** when the client can reach the server.
+The header badge shows **API online** when the client can reach the server. Paste a public GitHub URL (for example `https://github.com/pallets/flask`) and click **Analyse Repository**.
+
+Notes: small repositories are ready for chat in a couple of seconds. The Gemini free tier allows 100 embedded chunks per minute, so large repositories take a few minutes to index fully (chat works while that finishes, using the most important files first). Set `USE_MOCK_DATA=true` in `.env` to get fake data for UI work without any API keys.
 
 ## Deploy to Render
 
 [`render.yaml`](render.yaml) defines two services: **gittoknow-api** (FastAPI, from `server/`) and **gittoknow** (the React site, built from `client/`).
 
 1. Render dashboard > **New > Blueprint**, select `white-shn/GitToKnow` and the `main` branch.
-2. When asked, enter the secrets: `GEMINI_API_KEY` (required) and `GITHUB_TOKEN` (recommended, avoids GitHub's 60 requests/hour limit).
+2. When asked, enter the secrets: `GEMINI_API_KEY` (required) and `GITHUB_TOKEN` (recommended).
 3. Deploy. The site will be at `https://gittoknow.onrender.com` and the API at `https://gittoknow-api.onrender.com`.
 4. If Render adds a suffix to either name (the names are global), set `VITE_API_URL` on the site to the API's real URL and redeploy it. The API already accepts any `*.onrender.com` origin.
 
-Notes: the free plan sleeps after ~15 minutes without traffic (the first request after that takes about a minute), and analysed repositories are kept in memory, so they are lost when the API restarts. Open the site once before a demo to wake it.
+Notes: the free plan sleeps after about 15 minutes without traffic (the first request after that takes about a minute), and analysed repositories are kept in memory, so they are lost when the API restarts. Open the site once before a demo to wake it.
+
+## API
+
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | `/api/health` | Liveness check |
+| POST | `/api/repos/analyze` | `{ "repo_url": "https://github.com/owner/repo" }`: fetch and analyse; returns tree, languages, frameworks, dependencies, classified files and the import graph, and starts indexing |
+| GET | `/api/repos/{owner}/{repo}/overview` | AI overview (markdown) |
+| GET | `/api/repos/{owner}/{repo}/status` | Chat index status: `pending`, `indexing`, `ready`, `failed`, with progress |
+| GET | `/api/repos/{owner}/{repo}/files/{path}` | Content of one file (code viewer) |
+| POST | `/api/repos/{owner}/{repo}/chat` | `{ question, history }`: grounded answer with `[n]` citations (`path`, `start_line`, `end_line`) |
 
 ## Project layout
 
@@ -59,43 +108,40 @@ Notes: the free plan sleeps after ~15 minutes without traffic (the first request
 server/app/
   main.py              app factory + CORS
   core/config.py       settings (env-driven)
-  api/router.py        mounts all routes under /api
-  api/routes/          one file per resource (health, repos, ...)
+  api/                 router and one route file per resource (health, repos, chat)
   schemas/             pydantic request/response models
   services/
-    github.py          GitHub access (repo URL parsing today; fetching next)
-    rag/               chunking, embeddings, vector store, retrieval
-    llm/               Gemma 4 client + prompts
+    github.py          GitHub API: metadata + zipball download
+    analysis/          tree, languages, frameworks/dependencies, classification, important files, import graph
+    llm/               Gemini API client (Gemma 4), prompts, overview
+    rag/               chunking, paced indexing, retrieval, chat
+    store.py           in-memory repo store
 
 client/src/
   api/                 fetch client + one module per server resource
-  components/ui/       shadcn/ui components (JavaScript)
-  components/layout/   app shell pieces
-  features/            one folder per feature (repo-analysis, ...)
+  components/          ui/ (shadcn), layout/, Markdown
+  features/            repo-analysis (workspace, overview), structure (file tree), architecture (graph), chat, code-viewer
   hooks/               shared React hooks
   pages/               top-level screens
-  lib/utils.js         `cn()` class helper
 ```
 
-## API
+## Docs
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/api/health` | Liveness check |
-| POST | `/api/repos/analyze` | `{ "repo_url": "https://github.com/owner/repo" }` - validates the URL (analysis pipeline is a stub) |
+| File | What's in it |
+| --- | --- |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Workstreams, API contract, status |
+| [docs/HACKATHON_RULES.md](docs/HACKATHON_RULES.md) | Rules, schedule, AI rules and judging criteria from the rulebook |
+| [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) | Submission steps, README checklist, AI tools and models log |
+| [docs/DEV_GUIDELINES.md](docs/DEV_GUIDELINES.md) | Tech we use and don't use (JavaScript only, Tailwind only...), folder conventions |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Branch model (`feat/*` to `staging` to `main`), PR and review workflow |
 
 ## Team
 
-_Add team members here._
+- Nishant Golhani
+- Advait Saxena
+- Neelesh Singh
+- Abhiram Kasyap
 
 ## License
 
 [MIT](LICENSE)
-
-## Models, libraries and AI tools
-
-**Gemma 4 via the Gemini API** (`gemma-4-26b-a4b-it`, open-weight, [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms)) writes the repository overview and answers questions about the code. It is called from [`server/app/services/llm/gemma.py`](server/app/services/llm/gemma.py) (`generate()`), with prompts in `llm/prompts.py`.
-
-**RAG:** code is split into line-window chunks and embedded with `gemini-embedding-001` (Gemini API); the most relevant chunks are retrieved by cosine similarity and given to Gemma 4, which answers with `[n]` citations that map back to file and line ranges (`server/app/services/rag/`).
-
-_Libraries, datasets and AI coding tools: fill in per [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) before submitting._

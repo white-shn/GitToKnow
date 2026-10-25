@@ -49,15 +49,15 @@ Add a row whenever someone uses an AI tool.
 
 | Tool | Who used it | What it produced |
 | --- | --- | --- |
-| Claude Code | | Initial project scaffold (client/server structure, dashboard UI, FastAPI skeleton, docs) |
-| | | |
+| Claude Code (Claude Sonnet 5.5) | Advait Saxena | Initial scaffold and dashboard; GitHub fetch + repo analysis; dependency graph; Gemma 4 overview + RAG chat; client workspace (tabs, file tree, graph view, chat UI, code viewer); docs; review/fix of the Render config |
+| _Teammates: add any other AI tool you used (Copilot, ChatGPT, Gemini...), who used it and what it produced_ | | |
 
 ## 6. Models and licenses (copy into README)
 
 | Model | Used for | License / terms link |
 | --- | --- | --- |
-| Gemma 4 (via Gemini API) | Repo analysis / Q&A | _add link_ |
-| | | |
+| Gemma 4 `gemma-4-26b-a4b-it` (via Gemini API) | Repository overview and chat answers | [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms) |
+| `gemini-embedding-001` (Gemini API, hosted, not open-weight) | Embeddings for code retrieval | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
 
 ## 7. Final-hour rules
 
