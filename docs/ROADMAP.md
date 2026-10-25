@@ -41,11 +41,15 @@ Put your name next to a stream so nobody builds the same thing.
 - RAG: chunk by ~60-line windows with overlap (keep `path/start_line/end_line`), embed in batches, in-memory numpy cosine similarity, index in a background task and update `index_status` / `index_progress`. Chat: rewrite follow-up into a standalone query from `history`, retrieve top-k, number the chunks, tell the model to cite `[n]`, map `[n]` back to `citations`. If nothing relevant is retrieved, say so instead of guessing.
 
 ### D. Client workspace
+**Status: done** (branch `feat/client-workspace`, built together with E). `features/repo-analysis/` has `Workspace` (tabs: AI Summary, File Structure, Structure Map, Ask the Repo), `OverviewPanel`, and the `RepoProvider`/`useRepo` context, which also owns the shared code viewer: call `openFile(path, { start_line, end_line })` from anywhere. `features/structure/` is the searchable, category-filterable file tree; `features/code-viewer/` is the dialog.
+
 - After analysis, replace `AnalysisResult.jsx` with shadcn **Tabs**: Overview | Structure | Architecture | Chat (no router). Share state through a `RepoProvider` context.
 - Overview (markdown), language/framework/dependency badges, file tree with category badges, important files list.
 - `CodeViewerDialog.jsx`: fetches a file, shows line numbers, highlights and scrolls to a line range. Used by graph node details **and** chat citations.
 
 ### E. Architecture graph + chat UI
+**Status: done** (same branch). `features/architecture/` is the React Flow graph (dagre layout, click a node to highlight its neighbours and inspect it in `NodeDetails`). `features/chat/` is the chat UI and `useChat` hook; it sends `history` with each question, turns `[n]` markers into clickable citation chips, and shows server errors inline. The AI summary and chat show an error with a Retry button until stream C implements `overview` and `chat` (they return 501 when `USE_MOCK_DATA=false`); with `USE_MOCK_DATA=true` they work against mock data.
+
 - React Flow graph (nodes coloured by category, dagre layout), `NodeDetails` side panel (files, imports, imported-by; clicking a file opens the code viewer).
 - Chat panel with suggested questions, citation chips (`path:start-end`) opening the code viewer, `useChat` hook sending `history` for follow-ups, loading state until `index_status` is `ready`.
 
