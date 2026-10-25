@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import gsap from 'gsap'
 import {
+  ChevronRight,
+  Compass,
   Copy,
   FileCode2,
   FolderTree,
   Maximize2,
   Search,
   Star,
+  X,
 } from 'lucide-react'
 import { getFile } from '@/api/repos'
 import EmptyRepoState from '@/components/layout/EmptyRepoState'
@@ -15,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRepo } from '@/features/repo-analysis/RepoContext'
 import FileTree from '@/features/structure/FileTree'
+import Sunburst from '@/features/structure/Sunburst'
 import { CATEGORIES, categoryOf } from '@/lib/categories'
 import { cn } from '@/lib/utils'
 
@@ -128,7 +133,7 @@ function CodePreview({ repoId, path, fileInfo, onOpenModal }) {
   )
 }
 
-export default function FileStructurePage() {
+function ExplorerView() {
   const { analysis, fileInfo, openFile } = useRepo()
 
   const [query, setQuery] = useState('')
@@ -267,6 +272,131 @@ export default function FileStructurePage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+const glass = 'rounded-2xl border border-white/10 bg-black/45 shadow-2xl backdrop-blur-xl'
+
+/** The whole codebase as an interactive sunburst: click folders to dive in, click a file to read it. */
+function GalaxyView() {
+  const { analysis, fileInfo, openFile } = useRepo()
+  const [focusPath, setFocusPath] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
+  const codePanel = useRef(null)
+
+  useEffect(() => {
+    if (selectedFile && codePanel.current) {
+      gsap.fromTo(codePanel.current, { x: 70, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: 'power3.out' })
+    }
+  }, [selectedFile])
+
+  const parts = focusPath ? focusPath.split('/') : []
+  const present = [...new Set(analysis.files.map((f) => f.category))].filter((k) => CATEGORIES[k])
+
+  return (
+    <div className="flex h-full min-h-0">
+      <div className="relative min-w-0 flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_50%_45%,oklch(0.22_0.05_285)_0%,transparent_65%)]">
+        <div aria-hidden className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
+        <div className="absolute inset-0 p-3 sm:p-6">
+          <Sunburst
+            tree={analysis.tree}
+            fileInfo={fileInfo}
+            selectedFile={selectedFile}
+            onSelectFile={setSelectedFile}
+            focusPath={focusPath}
+            onFocusChange={setFocusPath}
+          />
+        </div>
+
+        <nav aria-label="Folder path" className={`${glass} absolute left-4 top-4 flex max-w-[70%] flex-wrap items-center gap-0.5 px-2 py-1.5 text-xs`}>
+          <button type="button" onClick={() => setFocusPath('')} className="rounded px-1.5 py-0.5 font-mono hover:bg-white/10">repo</button>
+          {parts.map((part, i) => (
+            <span key={i} className="flex items-center gap-0.5">
+              <ChevronRight className="size-3 text-muted-foreground" />
+              <button type="button" onClick={() => setFocusPath(parts.slice(0, i + 1).join('/'))} className="rounded px-1.5 py-0.5 font-mono hover:bg-white/10">{part}</button>
+            </span>
+          ))}
+        </nav>
+
+        <div className={`${glass} pointer-events-none absolute bottom-4 left-4 flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs`}>
+          {present.map((key) => (
+            <span key={key} className="flex items-center gap-1.5">
+              <span className={`size-2.5 rounded-full ${CATEGORIES[key].dot}`} style={{ boxShadow: `0 0 8px var(--cat-${key})` }} />
+              {CATEGORIES[key].label}
+            </span>
+          ))}
+        </div>
+        {!selectedFile && (
+          <p className={`${glass} pointer-events-none absolute bottom-4 right-4 px-3 py-2 text-xs text-muted-foreground`}>
+            Arc size = code volume · click a folder to dive in · click the centre to go back
+          </p>
+        )}
+      </div>
+
+      {selectedFile && (
+        <div ref={codePanel} className="relative w-[min(48%,640px)] shrink-0 border-l border-white/10 bg-black/30 backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={() => setSelectedFile(null)}
+            aria-label="Close file"
+            className="absolute -left-3 top-3 z-10 flex size-6 items-center justify-center rounded-full border border-white/20 bg-background text-muted-foreground shadow-lg transition-colors hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+          <CodePreview repoId={analysis.repo_id} path={selectedFile} fileInfo={fileInfo} onOpenModal={openFile} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function FileStructurePage() {
+  const { analysis } = useRepo()
+  const [mode, setMode] = useState('galaxy')
+
+  if (!analysis) {
+    return (
+      <div className="h-full overflow-y-auto px-4 py-8">
+        <EmptyRepoState
+          icon={FolderTree}
+          title="Interactive File Structure"
+          description="Analyse a repository to explore its whole codebase as an interactive galaxy, or browse it like an IDE explorer."
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-white/10 bg-black/20 px-4">
+        <h1 className="flex items-center gap-2 text-sm font-semibold">
+          <FolderTree className="size-4 text-primary" />
+          File structure
+        </h1>
+        <div role="tablist" aria-label="View" className="flex rounded-lg border border-white/10 p-0.5 text-xs">
+          {[
+            { id: 'galaxy', label: 'Galaxy', icon: Compass },
+            { id: 'explorer', label: 'Explorer', icon: FolderTree },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={mode === id}
+              onClick={() => setMode(id)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors',
+                mode === id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="size-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1">{mode === 'galaxy' ? <GalaxyView /> : <ExplorerView />}</div>
     </div>
   )
 }
