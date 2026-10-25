@@ -73,9 +73,10 @@ Key shapes:
 
 | Time | Goal |
 | --- | --- |
-| now to ~1:45 | Pick a stream, pull, branch; run the app and see mock data end to end |
+| now to ~1:45 | Pick a stream, `git checkout staging`, branch from it; run the app and see mock data end to end. **PRs go into `staging`** ([CONTRIBUTING.md](CONTRIBUTING.md)) |
 | to ~3:15 | Build your stream against the contract |
 | 3:15 - 3:50 | Integrate real endpoints (`USE_MOCK_DATA=false`), test 2-3 repos, fix breakage |
+| 3:30 | Maintainer promotes `staging` to `main` (first release) |
 | 3:50 - 4:00 | UI polish |
 | **4:00** | **Feature freeze** |
 | 4:00 - 4:30 | README, AI tools log, models table, demo rehearsal |

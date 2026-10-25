@@ -14,7 +14,7 @@ AI-powered platform that analyses GitHub repositories and helps developers under
 | [docs/HACKATHON_RULES.md](docs/HACKATHON_RULES.md) | Rules, schedule, AI rules and judging criteria from the rulebook |
 | [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) | Submission steps, README checklist, AI tools and models log |
 | [docs/DEV_GUIDELINES.md](docs/DEV_GUIDELINES.md) | Tech we use and don't use (JavaScript only, Tailwind only...), folder conventions |
-| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Branch, commit, PR and review workflow, plus the final-hour plan |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Branch model (`feat/*` to `staging` to `main`), PR and review workflow, final-hour plan |
 
 ## Quick start
 
