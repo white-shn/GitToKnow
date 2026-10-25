@@ -22,6 +22,17 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-cat-frontend: var(--cat-frontend);
+  --color-cat-backend: var(--cat-backend);
+  --color-cat-config: var(--cat-config);
+  --color-cat-tests: var(--cat-tests);
+  --color-cat-docs: var(--cat-docs);
+  --color-cat-other: var(--cat-other);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -51,6 +62,21 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.77 0.17 160 / 70%);
+
+  /* File categories (structure tree, architecture graph) */
+  --cat-frontend: oklch(0.75 0.13 235);
+  --cat-backend: oklch(0.72 0.15 295);
+  --cat-config: oklch(0.8 0.14 80);
+  --cat-tests: oklch(0.72 0.17 10);
+  --cat-docs: oklch(0.78 0.09 200);
+  --cat-other: oklch(0.62 0.01 285);
+
+  /* Language breakdown */
+  --chart-1: oklch(0.77 0.17 160);
+  --chart-2: oklch(0.75 0.13 235);
+  --chart-3: oklch(0.72 0.15 295);
+  --chart-4: oklch(0.8 0.14 80);
+  --chart-5: oklch(0.72 0.17 10);
 }
 
 @layer base {
