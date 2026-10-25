@@ -23,25 +23,35 @@ Put your name next to a stream so nobody builds the same thing.
 | E | **Client: architecture graph + chat UI** | | `client/src/features/architecture/`, `features/chat/`, `api/chat.js` |
 
 ### A. GitHub fetch + analysis
+**Status: done** (branch `feat/repo-analysis`). Run it for real with `USE_MOCK_DATA=false` in `server/.env`. `services/analysis/analyzer.py` is the orchestrator; it already calls `graph.build_graph` (a stub for stream B to fill in). Fetched files live in `store.RepoRecord.files`, which streams B and C read from. Stream C: `analyze` leaves `index_status="pending"`, so start indexing after `store.save(...)` in `api/routes/repos.py`. Real `overview` is still 501 until stream C ships.
+
 - Fetch metadata (`GET /repos/{o}/{r}`) and download the **zipball once**, extracting text files in memory into `store.RepoRecord.files`. Skip binaries, `node_modules`, `.git`, lockfiles, files over ~200 KB; cap ~1500 files. Use `GITHUB_TOKEN` if set. Turn 404/403/rate-limit into `HTTPException` with a clear `detail`.
 - `tree.py` nested tree, `languages.py` extension to language counts, `detect.py` frameworks and dependencies (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `pom.xml`), `classify.py` into frontend/backend/config/tests/docs/other, `important.py` entry points, routing and config files with a short `reason`.
 
 ### B. Dependency graph
+**Status: done** (branch `feat/dependency-graph`). `services/analysis/imports.py` parses and resolves imports (JS/TS/Vue/Svelte incl. tsconfig/jsconfig aliases and `@/`, Python incl. relative imports, Java); `graph.py` builds the graph (test/docs/config files and example/demo folders are left out; over 150 files collapses to folder components with their files listed in `GraphNode.files`). Verified on Express, Flask, FastAPI, got (TS), gson (Java) and this repo. Client: nodes are keyed by `GraphNode.id` (a file path, or a folder path for components), edges point from importer to imported.
+
 - Parse imports: Python via `ast`; JS/JSX/TS via regex for `import ... from`, `require()`, dynamic `import()`. Resolve relative paths and aliases (`@/`) to real files; produce `nodes` and `edges` with `imports` / `imported_by`.
 - Cap ~150 nodes. For bigger repos collapse to folder-level components, listing member files in `GraphNode.files`.
 
 ### C. Gemma + RAG + overview
+**Status: done** (branch `feat/rag-chat`). `services/llm/gemma.py` is the only place that talks to the Gemini API (`generate()`, `embed_batches()`, retries, friendly errors). Overview: `llm/overview.py` (prefetched in the background after `/analyze`, cached on the record). RAG: `rag/chunker.py` (60-line windows), `rag/index.py` (background thread; chat works after the first batch), `rag/retriever.py` (cosine + path boost), `rag/chat.py` (follow-ups use the previous question, `[n]` markers become citations). Notes: thinking is set to MINIMAL (about 3x faster, same quality); the free embedding tier allows **100 texts/minute**, so indexing is paced at 90 chunks/minute and capped at 300 chunks (most important files first); `/status` now also returns `error`. Chat returns 409 while nothing is indexed yet.
+
 - `gemma.py`: `google-genai` client with `generate()` and `embed()`. `prompts.py`: overview and chat prompts.
 - **Gemma 4 gotchas (verified with a live call):** the response `parts` contain a reasoning part flagged `"thought": true` followed by the real answer, so **drop thought parts** before showing or parsing text (the SDK's `response.text` skips them; raw REST/`parts` iteration does not). Thinking tokens add latency, so keep prompts tight. `embed_content` accepts a list of strings to batch chunks.
 - Overview: prompt from meta + tree + important files + README, markdown out.
 - RAG: chunk by ~60-line windows with overlap (keep `path/start_line/end_line`), embed in batches, in-memory numpy cosine similarity, index in a background task and update `index_status` / `index_progress`. Chat: rewrite follow-up into a standalone query from `history`, retrieve top-k, number the chunks, tell the model to cite `[n]`, map `[n]` back to `citations`. If nothing relevant is retrieved, say so instead of guessing.
 
 ### D. Client workspace
+**Status: done** (branch `feat/client-workspace`, built together with E). `features/repo-analysis/` has `Workspace` (tabs: AI Summary, File Structure, Structure Map, Ask the Repo), `OverviewPanel`, and the `RepoProvider`/`useRepo` context, which also owns the shared code viewer: call `openFile(path, { start_line, end_line })` from anywhere. `features/structure/` is the searchable, category-filterable file tree; `features/code-viewer/` is the dialog.
+
 - After analysis, replace `AnalysisResult.jsx` with shadcn **Tabs**: Overview | Structure | Architecture | Chat (no router). Share state through a `RepoProvider` context.
 - Overview (markdown), language/framework/dependency badges, file tree with category badges, important files list.
 - `CodeViewerDialog.jsx`: fetches a file, shows line numbers, highlights and scrolls to a line range. Used by graph node details **and** chat citations.
 
 ### E. Architecture graph + chat UI
+**Status: done** (same branch). `features/architecture/` is the React Flow graph (dagre layout, click a node to highlight its neighbours and inspect it in `NodeDetails`). `features/chat/` is the chat UI and `useChat` hook; it sends `history` with each question, turns `[n]` markers into clickable citation chips, and shows server errors inline. The AI summary and chat show an error with a Retry button until stream C implements `overview` and `chat` (they return 501 when `USE_MOCK_DATA=false`); with `USE_MOCK_DATA=true` they work against mock data.
+
 - React Flow graph (nodes coloured by category, dagre layout), `NodeDetails` side panel (files, imports, imported-by; clicking a file opens the code viewer).
 - Chat panel with suggested questions, citation chips (`path:start-end`) opening the code viewer, `useChat` hook sending `history` for follow-ups, loading state until `index_status` is `ready`.
 

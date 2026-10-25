@@ -3,8 +3,9 @@ import gsap from 'gsap'
 import { BrainCircuit, FolderTree, MessagesSquare } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import AnalysisResult from '@/features/repo-analysis/AnalysisResult'
 import RepoAnalyzeForm from '@/features/repo-analysis/RepoAnalyzeForm'
+import RepoProvider from '@/features/repo-analysis/RepoProvider'
+import Workspace from '@/features/repo-analysis/Workspace'
 import { useApiStatus } from '@/hooks/useApiStatus'
 
 const FEATURES = [
@@ -44,39 +45,46 @@ export default function Dashboard() {
       <div className="relative">
         <Header apiStatus={apiStatus} />
 
-        <main className="mx-auto w-full max-w-5xl px-6 pb-16 pt-12 sm:pt-20">
-          <section className="mx-auto max-w-2xl text-center">
-            <h1 data-anim="hero" className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Understand any codebase,{' '}
-              <span className="bg-linear-to-r from-emerald-300 to-teal-400 bg-clip-text text-transparent">
-                faster
-              </span>
-              .
-            </h1>
-            <p data-anim="hero" className="mt-4 text-balance text-muted-foreground">
-              Paste a GitHub repository and GitToKnow maps its structure, explains how it works, and
-              answers your questions about it.
-            </p>
-          </section>
+        <main className={`mx-auto w-full px-6 pb-16 ${result ? 'max-w-6xl pt-2' : 'max-w-5xl pt-12 sm:pt-20'}`}>
+          {!result && (
+            <section className="mx-auto max-w-2xl text-center">
+              <h1 data-anim="hero" className="text-4xl font-bold tracking-tight sm:text-5xl">
+                Understand any codebase,{' '}
+                <span className="bg-linear-to-r from-emerald-300 to-teal-400 bg-clip-text text-transparent">
+                  faster
+                </span>
+                .
+              </h1>
+              <p data-anim="hero" className="mt-4 text-balance text-muted-foreground">
+                Paste a GitHub repository and GitToKnow maps its structure, explains how it works, and
+                answers your questions about it.
+              </p>
+            </section>
+          )}
 
-          <Card data-anim="hero" className="mx-auto mt-10 max-w-3xl gap-4 py-5">
+          <Card data-anim="hero" className={`mx-auto max-w-3xl gap-4 py-5 ${result ? 'mt-2' : 'mt-10'}`}>
             <CardContent className="space-y-4 px-5">
               <RepoAnalyzeForm onResult={setResult} />
-              {result && <AnalysisResult result={result} />}
             </CardContent>
           </Card>
 
-          <section className="mt-12 grid gap-4 sm:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, text }) => (
-              <Card key={title} data-anim="feature" className="gap-3 py-5">
-                <CardHeader className="gap-3 px-5">
-                  <Icon className="size-5 text-primary" />
-                  <CardTitle className="text-base">{title}</CardTitle>
-                  <CardDescription>{text}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </section>
+          {result ? (
+            <RepoProvider key={result.repo_id} analysis={result}>
+              <Workspace />
+            </RepoProvider>
+          ) : (
+            <section className="mt-12 grid gap-4 sm:grid-cols-3">
+              {FEATURES.map(({ icon: Icon, title, text }) => (
+                <Card key={title} data-anim="feature" className="gap-3 py-5">
+                  <CardHeader className="gap-3 px-5">
+                    <Icon className="size-5 text-primary" />
+                    <CardTitle className="text-base">{title}</CardTitle>
+                    <CardDescription>{text}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </section>
+          )}
         </main>
       </div>
     </div>
