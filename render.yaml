@@ -1,0 +1,43 @@
+# Render Blueprint: one API service (FastAPI) and one static site (React build).
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo and the `main` branch.
+services:
+  - type: web
+    name: gittoknow-api
+    runtime: python
+    rootDir: server
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: USE_MOCK_DATA
+        value: "false"
+      # Any *.onrender.com origin may call the API, so the static site works whatever name Render gives it.
+      - key: CORS_ORIGIN_REGEX
+        value: https://.*\.onrender\.com
+      - key: GEMMA_MODEL
+        value: gemma-4-26b-a4b-it
+      - key: EMBEDDING_MODEL
+        value: gemini-embedding-001
+      # Secrets: Render asks for these when the blueprint is created.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+
+  - type: web
+    name: gittoknow
+    runtime: static
+    rootDir: client
+    branch: main
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      # Baked into the build. If Render gives the API a different URL, update this and redeploy the site.
+      - key: VITE_API_URL
+        value: https://gittoknow-api.onrender.com

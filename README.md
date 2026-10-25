@@ -42,6 +42,17 @@ npm run dev
 
 The header badge shows **API online** when the client can reach the server.
 
+## Deploy to Render
+
+[`render.yaml`](render.yaml) defines two services: **gittoknow-api** (FastAPI, from `server/`) and **gittoknow** (the React site, built from `client/`).
+
+1. Render dashboard > **New > Blueprint**, select `white-shn/GitToKnow` and the `main` branch.
+2. When asked, enter the secrets: `GEMINI_API_KEY` (required) and `GITHUB_TOKEN` (recommended, avoids GitHub's 60 requests/hour limit).
+3. Deploy. The site will be at `https://gittoknow.onrender.com` and the API at `https://gittoknow-api.onrender.com`.
+4. If Render adds a suffix to either name (the names are global), set `VITE_API_URL` on the site to the API's real URL and redeploy it. The API already accepts any `*.onrender.com` origin.
+
+Notes: the free plan sleeps after ~15 minutes without traffic (the first request after that takes about a minute), and analysed repositories are kept in memory, so they are lost when the API restarts. Open the site once before a demo to wake it.
+
 ## Project layout
 
 ```
