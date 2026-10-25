@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import gsap from 'gsap'
 import { Link, NavLink } from 'react-router-dom'
 import {
   ExternalLink,
@@ -34,13 +35,19 @@ export default function AppNavbar({ chatOpen = false, onToggleChat }) {
   const apiStatus = useApiStatus()
   const { analysis, setAnalysis } = useRepo()
   const [showSwitchModal, setShowSwitchModal] = useState(false)
+  const header = useRef(null)
+
+  useEffect(() => {
+    const tween = gsap.fromTo(header.current, { y: -56, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out' })
+    return () => tween.kill()
+  }, [])
 
   const currentStatus = STATUS[apiStatus] || STATUS.online
   const meta = analysis?.meta
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-black/40 px-4 backdrop-blur-xl">
+      <header ref={header} className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-black/40 px-4 backdrop-blur-xl">
         {/* Left: Logo + Current Repo Badge */}
         <div className="flex items-center gap-3">
           <Link

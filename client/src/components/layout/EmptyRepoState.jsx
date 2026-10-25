@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import gsap from 'gsap'
 import { FolderTree, MessagesSquare, Network, Sparkles } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import RepoAnalyzeForm from '@/features/repo-analysis/RepoAnalyzeForm'
@@ -16,9 +18,24 @@ export default function EmptyRepoState({
   icon: FeatureIcon,
 }) {
   const { setAnalysis } = useRepo()
+  const root = useRef(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from('[data-anim="hero"]', { opacity: 0, y: 28, duration: 0.8, stagger: 0.12, ease: 'power3.out' })
+      gsap.from('[data-anim="feature"]', { opacity: 0, y: 36, scale: 0.96, duration: 0.7, stagger: 0.1, ease: 'power3.out', delay: 0.35 })
+      gsap.to('[data-orb]', { x: 'random(-60, 60)', y: 'random(-40, 40)', duration: 'random(6, 9)', ease: 'sine.inOut', repeat: -1, yoyo: true, stagger: 1.2 })
+    }, root)
+    return () => ctx.revert()
+  }, [])
 
   return (
-    <div className="mx-auto w-full max-w-4xl py-6 sm:py-10">
+    <div ref={root} className="relative mx-auto w-full max-w-4xl py-6 sm:py-10">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div data-orb className="absolute -left-24 top-0 size-80 rounded-full bg-primary/25 blur-3xl" />
+        <div data-orb className="absolute -right-20 top-40 size-96 rounded-full bg-cat-backend/20 blur-3xl" />
+        <div data-orb className="absolute bottom-0 left-1/3 size-72 rounded-full bg-cat-frontend/15 blur-3xl" />
+      </div>
       <section className="mx-auto max-w-2xl text-center">
         {FeatureIcon && (
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">

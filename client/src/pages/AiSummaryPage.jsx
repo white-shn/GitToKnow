@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import gsap from 'gsap'
 import { ExternalLink, FileCode2, GitFork, Layers, Package, Scale, Sparkles, Star } from 'lucide-react'
 import EmptyRepoState from '@/components/layout/EmptyRepoState'
 import Markdown from '@/components/Markdown'
@@ -13,6 +15,16 @@ import { categoryOf } from '@/lib/categories'
 export default function AiSummaryPage() {
   const { analysis, repoId, openFile } = useRepo()
   const { status, overview, error, retry } = useOverview(repoId)
+  const root = useRef(null)
+
+  // Banner and cards rise in one after another
+  useEffect(() => {
+    if (!root.current) return
+    const ctx = gsap.context(() => {
+      gsap.from('[data-slot="card"], [data-banner]', { opacity: 0, y: 26, duration: 0.65, stagger: 0.07, ease: 'power3.out' })
+    }, root)
+    return () => ctx.revert()
+  }, [repoId])
 
   if (!analysis) {
     return (
@@ -30,10 +42,10 @@ export default function AiSummaryPage() {
   const importantFiles = files.filter((f) => f.important)
 
   return (
-    <div className="h-full overflow-y-auto px-4 py-6 sm:px-8">
+    <div ref={root} className="h-full overflow-y-auto px-4 py-6 sm:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Repo Header Summary Banner */}
-        <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border bg-card/70 p-5 shadow-xs backdrop-blur-xs">
+        <div data-banner className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-white/10 bg-black/30 p-5 shadow-xl backdrop-blur-xl">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-mono text-2xl font-bold tracking-tight">
