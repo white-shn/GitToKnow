@@ -93,6 +93,7 @@ class OverviewResponse(BaseModel):
 class StatusResponse(BaseModel):
     index_status: IndexState
     progress: float = 0.0  # 0..1
+    error: str | None = None  # set when index_status is "failed"
 
 
 class FileContent(BaseModel):

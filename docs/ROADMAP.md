@@ -35,6 +35,8 @@ Put your name next to a stream so nobody builds the same thing.
 - Cap ~150 nodes. For bigger repos collapse to folder-level components, listing member files in `GraphNode.files`.
 
 ### C. Gemma + RAG + overview
+**Status: done** (branch `feat/rag-chat`). `services/llm/gemma.py` is the only place that talks to the Gemini API (`generate()`, `embed_batches()`, retries, friendly errors). Overview: `llm/overview.py` (prefetched in the background after `/analyze`, cached on the record). RAG: `rag/chunker.py` (60-line windows), `rag/index.py` (background thread; chat works after the first batch), `rag/retriever.py` (cosine + path boost), `rag/chat.py` (follow-ups use the previous question, `[n]` markers become citations). Notes: thinking is set to MINIMAL (about 3x faster, same quality); the free embedding tier allows **100 texts/minute**, so indexing is paced at 90 chunks/minute and capped at 300 chunks (most important files first); `/status` now also returns `error`. Chat returns 409 while nothing is indexed yet.
+
 - `gemma.py`: `google-genai` client with `generate()` and `embed()`. `prompts.py`: overview and chat prompts.
 - **Gemma 4 gotchas (verified with a live call):** the response `parts` contain a reasoning part flagged `"thought": true` followed by the real answer, so **drop thought parts** before showing or parsing text (the SDK's `response.text` skips them; raw REST/`parts` iteration does not). Thinking tokens add latency, so keep prompts tight. `embed_content` accepts a list of strings to batch chunks.
 - Overview: prompt from meta + tree + important files + README, markdown out.
