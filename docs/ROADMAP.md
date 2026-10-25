@@ -32,6 +32,7 @@ Put your name next to a stream so nobody builds the same thing.
 
 ### C. Gemma + RAG + overview
 - `gemma.py`: `google-genai` client with `generate()` and `embed()`. `prompts.py`: overview and chat prompts.
+- **Gemma 4 gotchas (verified with a live call):** the response `parts` contain a reasoning part flagged `"thought": true` followed by the real answer, so **drop thought parts** before showing or parsing text (the SDK's `response.text` skips them; raw REST/`parts` iteration does not). Thinking tokens add latency, so keep prompts tight. `embed_content` accepts a list of strings to batch chunks.
 - Overview: prompt from meta + tree + important files + README, markdown out.
 - RAG: chunk by ~60-line windows with overlap (keep `path/start_line/end_line`), embed in batches, in-memory numpy cosine similarity, index in a background task and update `index_status` / `index_progress`. Chat: rewrite follow-up into a standalone query from `history`, retrieve top-k, number the chunks, tell the model to cite `[n]`, map `[n]` back to `citations`. If nothing relevant is retrieved, say so instead of guessing.
 
