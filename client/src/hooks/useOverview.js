@@ -9,7 +9,6 @@ export function useOverview(repoId) {
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
-    if (!repoId) return // no repo analysed yet (landing page)
     const controller = new AbortController()
     getOverview(repoId, controller.signal)
       .then((data) => setState({ status: 'ready', overview: data.overview, error: null }))

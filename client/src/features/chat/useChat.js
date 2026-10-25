@@ -26,7 +26,5 @@ export function useChat(repoId) {
     }
   }
 
-  const clear = () => setMessages([])
-
-  return { messages, loading, send, clear }
+  return { messages, loading, send }
 }
