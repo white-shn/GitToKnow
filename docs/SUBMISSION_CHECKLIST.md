@@ -13,6 +13,7 @@ One team member submits for everyone.
 - [ ] AI tools used are credited (see the log below)
 - [ ] Submitted in OrganizerHQ before 5:00 PM with **both challenges ticked**
 - [ ] Gemma 4 is called through the Gemini API (Best Use of Gemma 4)
+- [x] Agent skill follows the Agent Skills standard: `skills/gittoknow/SKILL.md` (frontmatter `name` matches the folder, plus `scripts/` and `references/`)
 
 ## 2. Root `README.md` must contain
 

@@ -17,6 +17,24 @@ Paste a public repository URL and you get three views plus an always-available a
 | **Structure Map** | An Obsidian-style physics graph of which files import which, built from real `import` / `require` statements. Drag nodes, zoom, hover to light up a file's neighbours, click to inspect what it depends on and what uses it |
 | **Ask the Repo** (right sidebar, on every page) | Chat about the codebase while you explore. Answers are grounded in retrieved code and cite `[n]` sources that open the file at the cited lines; follow-up questions work, and the conversation is kept as you move between pages |
 
+## Agent skill
+
+GitToKnow also ships as an **agent skill** that follows the [Agent Skills open standard](https://agentskills.io): [`skills/gittoknow/`](skills/gittoknow/SKILL.md). Any skills-compatible agent (Claude Code, OpenCode and others) can use it to onboard a developer to a repository: it calls the GitToKnow API, so the answers come from Gemma 4 over the real code and carry file and line citations.
+
+```
+skills/gittoknow/
+  SKILL.md              name, description and the onboarding workflow the agent follows
+  scripts/gittoknow.py  CLI the agent runs: analyze, onboard, ask, file (Python standard library only)
+  references/api.md     the endpoints behind the CLI
+```
+
+Install it by copying the `skills/gittoknow` folder into your agent's skills directory (for Claude Code that is `.claude/skills/`; check your agent's docs for others), point it at a running server with `GITTOKNOW_API_URL` (default `http://localhost:8000`), then ask the agent something like "help me get started with https://github.com/pallets/flask". You can also run the CLI by hand:
+
+```bash
+python skills/gittoknow/scripts/gittoknow.py onboard https://github.com/pallets/flask
+python skills/gittoknow/scripts/gittoknow.py ask https://github.com/pallets/flask "where are routes registered?"
+```
+
 ## How it works
 
 1. **Fetch:** the server downloads the repository through the GitHub API (metadata plus the zipball) and keeps the text files in memory. Binaries, `node_modules`, lockfiles and huge files are skipped.
@@ -51,7 +69,7 @@ Paste a public repository URL and you get three views plus an always-available a
 
 AI tools were used to help build this project. Credited here as the rules require:
 
-- **Claude Code** (Anthropic, Claude Sonnet 5.5): the initial client/server scaffold and dashboard, the GitHub fetching and repository analysis, the dependency graph, the Gemma 4 overview and RAG chat pipeline, the client UI (file tree and galaxy view, force graph, chat sidebar, code viewer, animations), the project docs, and the review and fix of the Render deployment configuration.
+- **Claude Code** (Anthropic, Claude Sonnet 5.5): the initial client/server scaffold and dashboard, the GitHub fetching and repository analysis, the dependency graph, the Gemma 4 overview and RAG chat pipeline, the client UI (file tree and galaxy view, force graph, chat sidebar, code viewer, animations), the project docs, and the review and fix of the Render deployment configuration, and the agent skill under `skills/gittoknow/`.
 - **Antigravity** (Google): AI coding assistance used by team members during the event.
 - **OpenCode**: AI coding assistance used by team members during the event.
 - **Gemma 4** (Google, via the Gemini API): the AI *inside* the product (overview and chat answers), described under Models above. It is not used to write the code.
@@ -126,6 +144,8 @@ server/app/
     llm/               Gemini API client (Gemma 4), prompts, overview
     rag/               chunking, paced indexing, retrieval, chat
     store.py           in-memory repo store
+
+skills/gittoknow/      agent skill (SKILL.md, scripts/, references/)
 
 client/src/
   api/                 fetch client + one module per server resource
