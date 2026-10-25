@@ -8,12 +8,14 @@ Built for **Hacktoberfest x MOSS Hack Day Udupi** (MIT Manipal, 25 October 2026)
 
 ## What it does
 
-| Tab | What you get |
+Paste a public repository URL and you get three views plus an always-available assistant:
+
+| View | What you get |
 | --- | --- |
 | **AI Summary** | A Gemma 4 written overview (what it does, tech stack, how it is organised, where to start), languages, frameworks, dependencies, and a "Start here" list of the important files with the reason each matters |
-| **File Structure** | The folder tree, searchable and filterable by category (frontend, backend, config, tests, docs); click any file to read it |
-| **Structure Map** | An interactive graph of which files import which, built from real `import` / `require` statements. Click a node to see its files, what it depends on and what uses it |
-| **Ask the Repo** | Chat about the codebase. Answers are grounded in retrieved code, cite `[n]` sources you can click to open the file at the cited lines, and follow-up questions work |
+| **File Structure** | **Galaxy:** the whole codebase as an interactive sunburst, arc size = code volume, colour = category; click a folder to dive in, click a file to read it. **Explorer:** a searchable, filterable IDE-style tree with a code preview |
+| **Structure Map** | An Obsidian-style physics graph of which files import which, built from real `import` / `require` statements. Drag nodes, zoom, hover to light up a file's neighbours, click to inspect what it depends on and what uses it |
+| **Ask the Repo** (right sidebar, on every page) | Chat about the codebase while you explore. Answers are grounded in retrieved code and cite `[n]` sources that open the file at the cited lines; follow-up questions work, and the conversation is kept as you move between pages |
 
 ## How it works
 
@@ -41,7 +43,7 @@ Built for **Hacktoberfest x MOSS Hack Day Udupi** (MIT Manipal, 25 October 2026)
 
 ### Libraries and frameworks
 
-- **Client:** [React](https://react.dev) 19, [Vite](https://vite.dev), [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com) (with [Radix UI](https://www.radix-ui.com), class-variance-authority, clsx, tailwind-merge, tw-animate-css), [GSAP](https://gsap.com), [lucide-react](https://lucide.dev), [React Flow](https://reactflow.dev) (`@xyflow/react`) and [dagre](https://github.com/dagrejs/dagre) for the architecture graph, [react-markdown](https://github.com/remarkjs/react-markdown), [oxlint](https://oxc.rs)
+- **Client:** [React](https://react.dev) 19, [React Router](https://reactrouter.com), [Vite](https://vite.dev), [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com) (with [Radix UI](https://www.radix-ui.com), class-variance-authority, clsx, tailwind-merge, tw-animate-css), [GSAP](https://gsap.com), [lucide-react](https://lucide.dev), [d3-force](https://github.com/d3/d3-force) for the graph physics (rendered on a canvas), [react-markdown](https://github.com/remarkjs/react-markdown), [oxlint](https://oxc.rs)
 - **Server:** [FastAPI](https://fastapi.tiangolo.com), Uvicorn, Pydantic and pydantic-settings, [httpx](https://www.python-httpx.org), [google-genai](https://github.com/googleapis/python-genai), [NumPy](https://numpy.org)
 
 ### AI coding tools
