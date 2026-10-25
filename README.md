@@ -49,7 +49,13 @@ Paste a public repository URL and you get three views plus an always-available a
 
 ### AI coding tools
 
-- **Claude Code** (Anthropic, Claude Sonnet 5.5) was used to build much of this project: the initial client/server scaffold and dashboard, the GitHub fetching and repository analysis, the dependency graph, the Gemma 4 overview and RAG chat pipeline, the client workspace (tabs, file tree, graph view, chat UI, code viewer), the project docs, and the review and fix of the Render deployment configuration.
+AI tools were used to help build this project. Credited here as the rules require:
+
+- **Claude Code** (Anthropic, Claude Sonnet 5.5): the initial client/server scaffold and dashboard, the GitHub fetching and repository analysis, the dependency graph, the Gemma 4 overview and RAG chat pipeline, the client UI (file tree and galaxy view, force graph, chat sidebar, code viewer, animations), the project docs, and the review and fix of the Render deployment configuration.
+- **Antigravity** (Google): AI coding assistance used by team members during the event.
+- **OpenCode**: AI coding assistance used by team members during the event.
+- **Gemma 4** (Google, via the Gemini API): the AI *inside* the product (overview and chat answers), described under Models above. It is not used to write the code.
+- **Fallback model (optional):** if `FALLBACK_API_KEY` is set, xAI Grok (or another OpenAI-compatible model) answers only when Gemma 4 fails, and such answers are labelled. It is part of the running app, not a coding tool.
 
 ## Quick start
 
