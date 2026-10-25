@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     embedding_model: str = "gemini-embedding-001"
 
     # Serve mock data from the repo endpoints until the real pipeline is wired up
-    use_mock_data: bool = True
+    use_mock_data: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
