@@ -29,6 +29,8 @@ Put your name next to a stream so nobody builds the same thing.
 - `tree.py` nested tree, `languages.py` extension to language counts, `detect.py` frameworks and dependencies (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `pom.xml`), `classify.py` into frontend/backend/config/tests/docs/other, `important.py` entry points, routing and config files with a short `reason`.
 
 ### B. Dependency graph
+**Status: done** (branch `feat/dependency-graph`). `services/analysis/imports.py` parses and resolves imports (JS/TS/Vue/Svelte incl. tsconfig/jsconfig aliases and `@/`, Python incl. relative imports, Java); `graph.py` builds the graph (test/docs/config files and example/demo folders are left out; over 150 files collapses to folder components with their files listed in `GraphNode.files`). Verified on Express, Flask, FastAPI, got (TS), gson (Java) and this repo. Client: nodes are keyed by `GraphNode.id` (a file path, or a folder path for components), edges point from importer to imported.
+
 - Parse imports: Python via `ast`; JS/JSX/TS via regex for `import ... from`, `require()`, dynamic `import()`. Resolve relative paths and aliases (`@/`) to real files; produce `nodes` and `edges` with `imports` / `imported_by`.
 - Cap ~150 nodes. For bigger repos collapse to folder-level components, listing member files in `GraphNode.files`.
 
