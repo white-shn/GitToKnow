@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getHealth } from '@/api/health'
 
-/** Pings the backend once on mount. status: 'checking' | 'online' | 'offline' */
+/** Pings the server once on mount. status: 'checking' | 'online' | 'offline' */
 export function useApiStatus() {
   const [status, setStatus] = useState('checking')
 

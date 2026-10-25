@@ -8,7 +8,7 @@ export class ApiError extends Error {
   }
 }
 
-/** Thin fetch wrapper: JSON in/out, throws ApiError with the backend's `detail` message. */
+/** Thin fetch wrapper: JSON in/out, throws ApiError with the server's `detail` message. */
 export async function request(path, { method = 'GET', body, signal } = {}) {
   let res
   try {
@@ -20,7 +20,7 @@ export async function request(path, { method = 'GET', body, signal } = {}) {
     })
   } catch (err) {
     if (err.name === 'AbortError') throw err
-    throw new ApiError('Cannot reach the backend. Is it running?', 0)
+    throw new ApiError('Cannot reach the server. Is it running?', 0)
   }
 
   const data = await res.json().catch(() => null)
