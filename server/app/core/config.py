@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "GitToKnow API"
     version: str = "0.1.0"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origin_regex: str = ""  # optional, e.g. https://.*\.onrender\.com for deployed frontends
 
     # GitHub (token is optional, but lifts the 60 requests/hour anonymous limit)
     github_token: str = ""
