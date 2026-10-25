@@ -10,6 +10,7 @@ AI-powered platform that analyses GitHub repositories and helps developers under
 
 | File | What's in it |
 | --- | --- |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | **Start here:** what's left to build, who owns what, API contract, timeline |
 | [docs/HACKATHON_RULES.md](docs/HACKATHON_RULES.md) | Rules, schedule, AI rules and judging criteria from the rulebook |
 | [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) | Submission steps, README checklist, AI tools and models log |
 | [docs/DEV_GUIDELINES.md](docs/DEV_GUIDELINES.md) | Tech we use and don't use (JavaScript only, Tailwind only...), folder conventions |
