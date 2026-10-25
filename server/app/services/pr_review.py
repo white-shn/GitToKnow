@@ -1,11 +1,13 @@
 """Lightweight, explainable review of open GitHub pull requests."""
 
 import re
+import json
 from collections import Counter, defaultdict
 
 import httpx
 
 from app.services.github import API, GitHubError, _headers, _raise_for_status
+from app.services.llm import gemma
 
 MAX_PULLS = 20
 ISSUE_REF = re.compile(r"(?:\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#|#)(\d+)", re.I)
@@ -51,6 +53,42 @@ def _review_pr(pr: dict, files: list[str], all_file_counts: Counter) -> dict:
     }
 
 
+def _ai_review(owner: str, repo: str, groups: list[dict]) -> tuple[str | None, str]:
+    """Ask Groq for a concise senior-reviewer perspective over bounded PR metadata."""
+    evidence = [
+        {
+            "issue": group["issue"],
+            "recommended_pr": group["best_pr_number"],
+            "candidates": [
+                {
+                    "number": pr["number"], "title": pr["title"], "score": pr["score"],
+                    "draft": pr["draft"], "changed_files": pr["changed_files"],
+                    "additions": pr["additions"], "deletions": pr["deletions"],
+                    "warnings": pr["recommendations"], "overlap": pr["overlapping_files"][:10],
+                }
+                for pr in group["pull_requests"]
+            ],
+        }
+        for group in groups
+    ]
+    prompt = (
+        f"You are a senior maintainer reviewing open pull requests for {owner}/{repo}. "
+        "Use only the supplied metadata; do not claim you inspected source code or diffs. "
+        "Write concise Markdown with: (1) merge recommendation for each issue group, "
+        "(2) blockers before merge, and (3) the highest-value test or verification to request. "
+        "If an issue has only one PR, assess its readiness rather than inventing a comparison.\n\n"
+        f"Review evidence:\n{json.dumps(evidence, ensure_ascii=False)}"
+    )
+    try:
+        return gemma.generate_with_fallback_model(
+            prompt,
+            system="Be precise, practical, and conservative. Never invent facts beyond the provided pull-request metadata.",
+            max_output_tokens=900,
+        ), "Groq AI review"
+    except gemma.LLMError as exc:
+        return None, exc.detail
+
+
 def review_pull_requests(owner: str, repo: str) -> dict:
     """Fetch open PRs and return reviewable, bounded data for the UI."""
     try:
@@ -91,4 +129,8 @@ def review_pull_requests(owner: str, repo: str) -> dict:
             "pull_requests": sorted(candidates, key=lambda item: (-item["score"], item["number"])),
         })
     groups.sort(key=lambda item: (item["issue"] == "No linked issue", item["issue"]))
-    return {"repo_id": f"{owner}/{repo}", "open_pr_count": len(reviews), "groups": groups, "truncated": len(pulls) == MAX_PULLS}
+    ai_review, ai_status = _ai_review(owner, repo, groups) if reviews else (None, "No open pull requests to review.")
+    return {
+        "repo_id": f"{owner}/{repo}", "open_pr_count": len(reviews), "groups": groups,
+        "truncated": len(pulls) == MAX_PULLS, "ai_review": ai_review, "ai_status": ai_status,
+    }

@@ -4,6 +4,7 @@ import EmptyRepoState from '@/components/layout/EmptyRepoState'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Markdown from '@/components/Markdown'
 import { getPullRequestReview } from '@/api/repos'
 import { useRepo } from '@/features/repo-analysis/RepoContext'
 
@@ -38,6 +39,8 @@ export default function PullRequestReviewPage() {
 
         {state.status === 'loading' && <Card><CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground"><Loader2 className="size-5 animate-spin text-primary" /> Fetching open PRs and comparing changed files…</CardContent></Card>}
         {state.status === 'error' && <Card><CardContent className="flex items-center justify-between gap-3 py-6 text-sm"><span className="text-destructive">Could not review PRs: {state.error}</span><Button size="sm" onClick={load}>Try again</Button></CardContent></Card>}
+        {state.status === 'ready' && state.data.ai_review && <Card className="border-primary/30"><CardHeader className="border-b pb-4"><CardTitle className="text-base">Groq AI reviewer</CardTitle><CardDescription>{state.data.ai_status}</CardDescription></CardHeader><CardContent className="pt-5"><Markdown>{state.data.ai_review}</Markdown></CardContent></Card>}
+        {state.status === 'ready' && !state.data.ai_review && state.data.open_pr_count > 0 && <Card><CardContent className="py-5 text-sm text-muted-foreground">AI review is ready when the reviewer adds <code>FALLBACK_API_KEY</code> to <code>server/.env</code>. Rule-based recommendations are shown below. ({state.data.ai_status})</CardContent></Card>}
         {state.status === 'ready' && state.data.open_pr_count === 0 && <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No open pull requests found for this repository.</CardContent></Card>}
         {state.status === 'ready' && state.data.groups.map((group) => (
           <Card key={group.issue}>

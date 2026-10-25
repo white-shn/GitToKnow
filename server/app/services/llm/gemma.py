@@ -161,6 +161,17 @@ def _generate_fallback(prompt: str, system: str | None, max_output_tokens: int) 
     return text
 
 
+def generate_with_fallback_model(prompt: str, system: str | None = None, max_output_tokens: int = 4096) -> str:
+    """Call the configured OpenAI-compatible provider directly (Groq by default).
+
+    This is for features that intentionally select the fallback provider rather than
+    using Gemma first. It shares the same environment configuration as `generate()`.
+    """
+    if not get_settings().fallback_api_key:
+        raise LLMError(503, "FALLBACK_API_KEY is not set. Add a Groq API key to server/.env and restart the server.")
+    return _generate_fallback(prompt, system, max_output_tokens)
+
+
 def generate(prompt: str, system: str | None = None, temperature: float = 0.2, max_output_tokens: int = 4096) -> str:
     """Gemma 4 first. If it fails (rate limit, outage, empty reply) and a fallback model is configured, use that
     and say so in the answer, so the source of every answer is clear."""
