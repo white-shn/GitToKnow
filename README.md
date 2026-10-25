@@ -51,7 +51,7 @@ python skills/gittoknow/scripts/gittoknow.py ask https://github.com/pallets/flas
 | --- | --- | --- |
 | **Gemma 4** `gemma-4-26b-a4b-it` (open-weight), called through the Gemini API | Repository overview and chat answers | [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms) |
 | `gemini-embedding-001` (Gemini API) | Embeddings for code retrieval. This is a hosted Google model, not open-weight | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
-| *Optional fallback:* xAI Grok (`grok-4` by default), or any OpenAI-compatible model set in `.env` | Used **only** if Gemma 4 fails or runs out of quota; the answer is labelled when it is used. The hosted Grok API is a closed model, so it does not count toward the open-source AI requirement. Gemma 4 is the primary and default model | [xAI terms](https://x.ai/legal) |
+| *Optional fallback:* `openai/gpt-oss-120b` (open-weight) hosted on Groq, or any OpenAI-compatible model set in `.env` | Used **only** if Gemma 4 fails or runs out of quota; the answer is labelled when it is used. Gemma 4 is the primary and default model | [Apache 2.0](https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE), [Groq terms](https://groq.com/terms-of-use) |
 
 **How Gemma 4 is called:** [`server/app/services/llm/gemma.py`](server/app/services/llm/gemma.py) wraps the `google-genai` SDK. `generate()` calls `models.generate_content` for the model above (with minimal thinking, which was about 3x faster than the default with equal answer quality in our tests); prompts live in [`llm/prompts.py`](server/app/services/llm/prompts.py). The overview is built in [`llm/overview.py`](server/app/services/llm/overview.py) and chat in [`rag/chat.py`](server/app/services/rag/chat.py).
 
@@ -73,7 +73,7 @@ AI tools were used to help build this project. Credited here as the rules requir
 - **Antigravity** (Google): AI coding assistance used by team members during the event.
 - **OpenCode**: AI coding assistance used by team members during the event.
 - **Gemma 4** (Google, via the Gemini API): the AI *inside* the product (overview and chat answers), described under Models above. It is not used to write the code.
-- **Fallback model (optional):** if `FALLBACK_API_KEY` is set, xAI Grok (or another OpenAI-compatible model) answers only when Gemma 4 fails, and such answers are labelled. It is part of the running app, not a coding tool.
+- **Fallback model (optional):** if `FALLBACK_API_KEY` is set, `gpt-oss-120b` on Groq (or another OpenAI-compatible model) answers only when Gemma 4 fails, and such answers are labelled. It is part of the running app, not a coding tool.
 
 ## Quick start
 
@@ -93,7 +93,7 @@ uvicorn app.main:app --reload
 In `server/.env` set:
 
 - `GEMINI_API_KEY`: get one at https://aistudio.google.com/apikey (needed for the AI summary and chat)
-- `FALLBACK_API_KEY`: optional; enables a fallback model (xAI Grok by default) if Gemma 4 fails or runs out of quota. Leave empty to use Gemma 4 only
+- `FALLBACK_API_KEY`: optional; enables a fallback model (gpt-oss-120b on Groq by default; key from https://console.groq.com/keys) if Gemma 4 fails or runs out of quota. Leave empty to use Gemma 4 only
 - `GITHUB_TOKEN`: optional but recommended; without it GitHub allows only 60 requests per hour (a token with no scopes is enough for public repos)
 
 **Client** (http://localhost:5173)
