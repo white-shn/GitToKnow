@@ -44,28 +44,14 @@ The header badge shows **API online** when the client can reach the server.
 
 ## Deploy to Render
 
-Deploy this project to Render in one click:
+[`render.yaml`](render.yaml) defines two services: **gittoknow-api** (FastAPI, from `server/`) and **gittoknow** (the React site, built from `client/`).
 
-[![Deploy to Render](https://render.com/images/deploy-button.svg)](https://render.com/new)
+1. Render dashboard > **New > Blueprint**, select `white-shn/GitToKnow` and the `main` branch.
+2. When asked, enter the secrets: `GEMINI_API_KEY` (required) and `GITHUB_TOKEN` (recommended, avoids GitHub's 60 requests/hour limit).
+3. Deploy. The site will be at `https://gittoknow.onrender.com` and the API at `https://gittoknow-api.onrender.com`.
+4. If Render adds a suffix to either name (the names are global), set `VITE_API_URL` on the site to the API's real URL and redeploy it. The API already accepts any `*.onrender.com` origin.
 
-**Steps:**
-
-1. Click the "Deploy to Render" button above or go to [dashboard.render.com](https://dashboard.render.com) → New Web Service
-2. Select your GitHub repository (`white-shn/GitToKnow`)
-3. Configure:
-   - **Root directory**: `/`
-   - **Build command**: `pip install -r requirements.txt`
-   - **Start command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - **Environment**: Python
-   - **Plan**: Free
-4. Set environment variables in the Render dashboard:
-   - `GITHUB_TOKEN`: (optional) GitHub API token
-   - `GEMINI_API_KEY`: Gemini API key for Gemma 4
-5. **Deploy!** Your service will be available at `https://your-service-name.onrender.com`
-
-The server will auto-start on deployment and handle GitHub API requests and AI-powered repository analysis.
-
-**Note**: The client (React frontend) would need its own Render service if you want a complete deployment. See the client directory for additional deployment options.
+Notes: the free plan sleeps after ~15 minutes without traffic (the first request after that takes about a minute), and analysed repositories are kept in memory, so they are lost when the API restarts. Open the site once before a demo to wake it.
 
 ## Project layout
 
