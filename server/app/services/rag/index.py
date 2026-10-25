@@ -1,7 +1,8 @@
-"""Build the in-memory vector index for a repo (runs in a background task after /analyze).
+"""Build the in-memory search index for a repo (runs in a background thread after /analyze).
 
-The index grows batch by batch, most important files first, and chat becomes usable after the first batch:
-the free-tier embedding quota (100 texts/minute) means a large repo takes several minutes to index fully.
+Keyword (BM25) search is ready instantly, so chat works right away. Embeddings are then added batch by batch,
+most important files first; the free-tier embedding quota (100 texts/minute) means a large repo takes several
+minutes. If embedding fails or runs out, chat keeps working on keyword search.
 """
 
 import logging
@@ -14,6 +15,7 @@ from app.schemas.repo import FileInfo
 from app.services import store
 from app.services.llm import gemma
 from app.services.rag.chunker import Chunk, chunk_file
+from app.services.rag.lexical import Bm25
 
 log = logging.getLogger(__name__)
 
@@ -26,8 +28,9 @@ CATEGORY_PRIORITY = {"frontend": 1, "backend": 1, "other": 1, "docs": 2, "config
 @dataclass
 class RagIndex:
     chunks: list[Chunk]
-    vectors: np.ndarray  # (len(chunks), dim), L2-normalised
-    complete: bool = False  # False while batches are still being embedded, or if the repo exceeded MAX_CHUNKS
+    vectors: np.ndarray  # (embedded so far, dim), L2-normalised; row i belongs to chunks[i]
+    lexical: Bm25  # keyword index over all chunks
+    complete: bool = False  # False while embedding is in progress, or if the repo exceeded MAX_CHUNKS
 
 
 def _priority(info: FileInfo) -> tuple[int, int, str]:
@@ -72,21 +75,18 @@ def build_index(repo_id: str) -> None:
             raise gemma.LLMError(422, "This repository has no text files that can be indexed.")
 
         vectors = np.zeros((0, gemma.EMBED_DIMENSIONS), dtype=np.float32)
+        record.index = RagIndex(chunks=chunks, vectors=vectors, lexical=Bm25([c.embedding_text for c in chunks]))
+        record.analysis.index_status = "ready"  # keyword search works already
+
         try:
             for _, batch in gemma.embed_batches([c.embedding_text for c in chunks], "RETRIEVAL_DOCUMENT"):
                 vectors = np.vstack([vectors, batch])
-                done = len(vectors)
-                # Publish the partial index: chat can already answer from the files indexed so far
-                record.index = RagIndex(chunks=chunks[:done], vectors=vectors, complete=False)
-                record.index_progress = 0.99 * done / len(chunks)
-                record.analysis.index_status = "ready"
+                record.index.vectors = vectors  # semantic search covers the files embedded so far
+                record.index_progress = 0.99 * len(vectors) / len(chunks)
         except gemma.LLMError as exc:
-            if record.index is None:
-                raise  # nothing usable yet: report the failure
-            record.index_error = f"Indexing stopped early ({len(record.index.chunks)} of {len(chunks)} chunks): {exc.detail}"
-            return
+            record.index_error = f"Semantic search unavailable ({exc.detail}); using keyword search."
 
-        record.index.complete = not over_cap
+        record.index.complete = not over_cap and len(record.index.vectors) == len(chunks)
         record.index_progress = 1.0
     except gemma.LLMError as exc:
         record.index_error = exc.detail

@@ -27,6 +27,13 @@ services:
         sync: false
       - key: GITHUB_TOKEN
         sync: false
+      # Optional fallback if Gemma 4 fails or runs out of quota (answers are labelled when it is used).
+      - key: FALLBACK_API_KEY
+        sync: false
+      - key: FALLBACK_BASE_URL
+        value: https://api.x.ai/v1
+      - key: FALLBACK_MODEL
+        value: grok-4
 
   - type: web
     name: gittoknow
