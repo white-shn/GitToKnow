@@ -17,6 +17,7 @@ API = "https://api.github.com"
 MAX_ARCHIVE_BYTES = 80 * 1024 * 1024  # refuse to download huge repos
 MAX_FILE_BYTES = 200 * 1024  # skip big files (generated, minified, data)
 MAX_FILES = 1500
+MAX_TOTAL_BYTES = 40 * 1024 * 1024  # cap on decompressed text kept in memory
 
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", "out", ".next", ".nuxt", "__pycache__", ".venv", "venv",
@@ -122,19 +123,26 @@ def _extract_text_files(archive: bytes) -> dict[str, str]:
     """Unzip into {path: text}, dropping the top-level folder, binaries, junk dirs and huge files."""
     files: dict[str, str] = {}
     with zipfile.ZipFile(io.BytesIO(archive)) as zf:
+        candidates = []
         for info in zf.infolist():
             if info.is_dir() or info.file_size > MAX_FILE_BYTES:
                 continue
             _, _, path = info.filename.partition("/")  # GitHub wraps everything in "<repo>-<sha>/"
-            if not path or not _keep(path):
-                continue
+            if path and _keep(path):
+                candidates.append((path, info))
+
+        # Read shallowest files first (most structure), bounded by file count and total size,
+        # so a crafted archive can't make us decompress gigabytes.
+        candidates.sort(key=lambda c: (c[0].count("/"), c[0]))
+        total = 0
+        for path, info in candidates:
+            if len(files) >= MAX_FILES or total + info.file_size > MAX_TOTAL_BYTES:
+                break
             raw = zf.read(info)
             if b"\x00" in raw[:8000]:  # binary
                 continue
+            total += len(raw)
             files[path] = raw.decode("utf-8", errors="replace")
-    if len(files) > MAX_FILES:  # keep the shallowest files, which carry most structure
-        keep = sorted(files, key=lambda p: (p.count("/"), p))[:MAX_FILES]
-        files = {p: files[p] for p in sorted(keep)}
     return dict(sorted(files.items()))
 
 

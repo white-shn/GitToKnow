@@ -46,9 +46,11 @@ def classify_file(path: str, frameworks: list[str]) -> Category:
 
     if dirs & TEST_DIRS or TEST_NAME.search(name):
         return "tests"
+    if lower in CONFIG_NAMES and not lower.startswith("license") or CONFIG_STEMS.match(name):
+        return "config"  # before docs, so requirements.txt is config rather than a .txt document
     if ext in DOC_EXTS or "docs" in dirs or "doc" in dirs or lower.startswith(("license", "readme", "changelog", "contributing")):
         return "docs"
-    if lower in CONFIG_NAMES or CONFIG_STEMS.match(name) or (ext in CONFIG_EXTS and len(parts) <= 2):
+    if ext in CONFIG_EXTS and len(parts) <= 2:
         return "config"
     if dirs & {".github", ".circleci", ".vscode", ".husky"}:
         return "config"

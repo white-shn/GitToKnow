@@ -57,8 +57,8 @@ def _dep(name: str, version: str, ecosystem: str, dev: bool = False) -> Dependen
 
 def _parse_package_json(text: str) -> list[Dependency]:
     data = json.loads(text)
-    deps = [_dep(n, str(v), "npm") for n, v in (data.get("dependencies") or {}).items()]
-    deps += [_dep(n, str(v), "npm", True) for n, v in (data.get("devDependencies") or {}).items()]
+    deps = [_dep(n, str(v or ""), "npm") for n, v in (data.get("dependencies") or {}).items()]
+    deps += [_dep(n, str(v or ""), "npm", True) for n, v in (data.get("devDependencies") or {}).items()]
     return deps
 
 
@@ -172,8 +172,8 @@ def detect_dependencies(files: dict[str, str]) -> list[Dependency]:
             continue  # not a manifest, or one belonging to an example/test app
         try:
             deps = parser(files[path])
-        except (ValueError, tomllib.TOMLDecodeError):
-            continue  # malformed manifest: skip it, keep analysing the rest
+        except Exception:  # noqa: BLE001 - manifests are untrusted input: any parse failure just skips that file
+            continue
         for dep in deps:
             found.setdefault((dep.ecosystem, dep.name), dep)
     ordered = sorted(found.values(), key=lambda d: (d.dev, d.ecosystem, d.name.lower()))
@@ -190,9 +190,9 @@ def _own_package_names(files: dict[str, str]) -> list[Dependency]:
             own.append(_dep((tomllib.loads(files["pyproject.toml"]).get("project") or {}).get("name", ""), "", "pypi"))
         if "Cargo.toml" in files:
             own.append(_dep((tomllib.loads(files["Cargo.toml"]).get("package") or {}).get("name", ""), "", "cargo"))
-    except (ValueError, AttributeError, tomllib.TOMLDecodeError):
+    except Exception:  # noqa: BLE001 - same reasoning as detect_dependencies
         pass
-    return own
+    return [d for d in own if d.name]
 
 
 def detect_frameworks(files: dict[str, str], dependencies: list[Dependency]) -> list[str]:
