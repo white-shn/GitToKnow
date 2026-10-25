@@ -50,7 +50,11 @@ Add a row whenever someone uses an AI tool.
 | Tool | Who used it | What it produced |
 | --- | --- | --- |
 | Claude Code (Claude Sonnet 5.5) | Advait Saxena | Initial scaffold and dashboard; GitHub fetch + repo analysis; dependency graph; Gemma 4 overview + RAG chat; client workspace (tabs, file tree, graph view, chat UI, code viewer); docs; review/fix of the Render config |
-| _Teammates: add any other AI tool you used (Copilot, ChatGPT, Gemini...), who used it and what it produced_ | | |
+| Antigravity (Google) | Team members | AI coding assistance during the event |
+| OpenCode | Team members | AI coding assistance during the event |
+| Gemma 4 (via Gemini API) | The app itself | Overview and chat answers inside the product; not used to write code |
+| Fallback model (xAI Grok, optional) | The app itself | Only answers when Gemma 4 fails; labelled in the UI; not a coding tool |
+| _Add any other AI tool used (who used it, and which parts it produced)_ | | |
 
 ## 6. Models and licenses (copy into README)
 
