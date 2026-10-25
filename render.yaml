@@ -31,9 +31,9 @@ services:
       - key: FALLBACK_API_KEY
         sync: false
       - key: FALLBACK_BASE_URL
-        value: https://api.x.ai/v1
+        value: https://api.groq.com/openai/v1
       - key: FALLBACK_MODEL
-        value: grok-4
+        value: openai/gpt-oss-120b
 
   - type: web
     name: gittoknow

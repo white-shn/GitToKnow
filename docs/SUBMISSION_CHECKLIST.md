@@ -13,6 +13,7 @@ One team member submits for everyone.
 - [ ] AI tools used are credited (see the log below)
 - [ ] Submitted in OrganizerHQ before 5:00 PM with **both challenges ticked**
 - [ ] Gemma 4 is called through the Gemini API (Best Use of Gemma 4)
+- [x] Agent skill follows the Agent Skills standard: `skills/gittoknow/SKILL.md` (frontmatter `name` matches the folder, plus `scripts/` and `references/`)
 
 ## 2. Root `README.md` must contain
 
@@ -53,7 +54,7 @@ Add a row whenever someone uses an AI tool.
 | Antigravity (Google) | Team members | AI coding assistance during the event |
 | OpenCode | Team members | AI coding assistance during the event |
 | Gemma 4 (via Gemini API) | The app itself | Overview and chat answers inside the product; not used to write code |
-| Fallback model (xAI Grok, optional) | The app itself | Only answers when Gemma 4 fails; labelled in the UI; not a coding tool |
+| Fallback model (gpt-oss-120b on Groq, optional) | The app itself | Only answers when Gemma 4 fails; labelled in the UI; not a coding tool |
 | _Add any other AI tool used (who used it, and which parts it produced)_ | | |
 
 ## 6. Models and licenses (copy into README)
@@ -62,7 +63,7 @@ Add a row whenever someone uses an AI tool.
 | --- | --- | --- |
 | Gemma 4 `gemma-4-26b-a4b-it` (via Gemini API) | Repository overview and chat answers | [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms) |
 | `gemini-embedding-001` (Gemini API, hosted, not open-weight) | Embeddings for code retrieval | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
-| Optional fallback: xAI Grok `grok-4` (hosted, closed), only if Gemma 4 fails; answers are labelled | Backup text generation | [xAI terms](https://x.ai/legal) |
+| Optional fallback: `openai/gpt-oss-120b` (open-weight) on Groq, only if Gemma 4 fails; answers are labelled | Backup text generation | [Apache 2.0](https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE), [Groq terms](https://groq.com/terms-of-use) |
 
 ## 7. Final-hour rules
 

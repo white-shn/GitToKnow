@@ -6,6 +6,7 @@ Failures surface as LLMError (status code + a message safe to show users).
 
 import logging
 import re
+import threading
 import time
 from collections.abc import Callable, Iterator
 from functools import lru_cache
@@ -39,11 +40,22 @@ class LLMError(Exception):
 
 
 @lru_cache
-def _client() -> genai.Client:
+def _build_client() -> genai.Client:
     key = get_settings().gemini_api_key
     if not key:
         raise LLMError(503, "GEMINI_API_KEY is not set. Add it to server/.env and restart the server.")
     return genai.Client(api_key=key)
+
+
+_client_lock = threading.Lock()
+
+
+def _client() -> genai.Client:
+    """The shared client. The lock matters: indexing and the overview start together in two threads, and an
+    unlocked lru_cache can build two clients on that first call. The loser is garbage-collected right after
+    `.models` is read from it, and its destructor closes the connection the call is still using."""
+    with _client_lock:
+        return _build_client()
 
 
 def _retry_after(exc: errors.APIError) -> float | None:

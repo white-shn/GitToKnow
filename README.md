@@ -17,6 +17,24 @@ Paste a public repository URL and you get three views plus an always-available a
 | **Structure Map** | An Obsidian-style physics graph of which files import which, built from real `import` / `require` statements. Drag nodes, zoom, hover to light up a file's neighbours, click to inspect what it depends on and what uses it |
 | **Ask the Repo** (right sidebar, on every page) | Chat about the codebase while you explore. Answers are grounded in retrieved code and cite `[n]` sources that open the file at the cited lines; follow-up questions work, and the conversation is kept as you move between pages |
 
+## Agent skill
+
+GitToKnow also ships as an **agent skill** that follows the [Agent Skills open standard](https://agentskills.io): [`skills/gittoknow/`](skills/gittoknow/SKILL.md). Any skills-compatible agent (Claude Code, OpenCode and others) can use it to onboard a developer to a repository: it calls the GitToKnow API, so the answers come from Gemma 4 over the real code and carry file and line citations.
+
+```
+skills/gittoknow/
+  SKILL.md              name, description and the onboarding workflow the agent follows
+  scripts/gittoknow.py  CLI the agent runs: analyze, onboard, ask, file (Python standard library only)
+  references/api.md     the endpoints behind the CLI
+```
+
+Install it by copying the `skills/gittoknow` folder into your agent's skills directory (for Claude Code that is `.claude/skills/`; check your agent's docs for others), point it at a running server with `GITTOKNOW_API_URL` (default `http://localhost:8000`), then ask the agent something like "help me get started with https://github.com/pallets/flask". You can also run the CLI by hand:
+
+```bash
+python skills/gittoknow/scripts/gittoknow.py onboard https://github.com/pallets/flask
+python skills/gittoknow/scripts/gittoknow.py ask https://github.com/pallets/flask "where are routes registered?"
+```
+
 ## How it works
 
 1. **Fetch:** the server downloads the repository through the GitHub API (metadata plus the zipball) and keeps the text files in memory. Binaries, `node_modules`, lockfiles and huge files are skipped.
@@ -33,7 +51,7 @@ Paste a public repository URL and you get three views plus an always-available a
 | --- | --- | --- |
 | **Gemma 4** `gemma-4-26b-a4b-it` (open-weight), called through the Gemini API | Repository overview and chat answers | [Apache 2.0](https://ai.google.dev/gemma/apache_2), [terms](https://ai.google.dev/gemma/terms) |
 | `gemini-embedding-001` (Gemini API) | Embeddings for code retrieval. This is a hosted Google model, not open-weight | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
-| *Optional fallback:* xAI Grok (`grok-4` by default), or any OpenAI-compatible model set in `.env` | Used **only** if Gemma 4 fails or runs out of quota; the answer is labelled when it is used. The hosted Grok API is a closed model, so it does not count toward the open-source AI requirement. Gemma 4 is the primary and default model | [xAI terms](https://x.ai/legal) |
+| *Optional fallback:* `openai/gpt-oss-120b` (open-weight) hosted on Groq, or any OpenAI-compatible model set in `.env` | Used **only** if Gemma 4 fails or runs out of quota; the answer is labelled when it is used. Gemma 4 is the primary and default model | [Apache 2.0](https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE), [Groq terms](https://groq.com/terms-of-use) |
 
 **How Gemma 4 is called:** [`server/app/services/llm/gemma.py`](server/app/services/llm/gemma.py) wraps the `google-genai` SDK. `generate()` calls `models.generate_content` for the model above (with minimal thinking, which was about 3x faster than the default with equal answer quality in our tests); prompts live in [`llm/prompts.py`](server/app/services/llm/prompts.py). The overview is built in [`llm/overview.py`](server/app/services/llm/overview.py) and chat in [`rag/chat.py`](server/app/services/rag/chat.py).
 
@@ -51,11 +69,11 @@ Paste a public repository URL and you get three views plus an always-available a
 
 AI tools were used to help build this project. Credited here as the rules require:
 
-- **Claude Code** (Anthropic, Claude Sonnet 5.5): the initial client/server scaffold and dashboard, the GitHub fetching and repository analysis, the dependency graph, the Gemma 4 overview and RAG chat pipeline, the client UI (file tree and galaxy view, force graph, chat sidebar, code viewer, animations), the project docs, and the review and fix of the Render deployment configuration.
+- **Claude Code** (Anthropic, Claude Sonnet 5.5): the initial client/server scaffold and dashboard, the GitHub fetching and repository analysis, the dependency graph, the Gemma 4 overview and RAG chat pipeline, the client UI (file tree and galaxy view, force graph, chat sidebar, code viewer, animations), the project docs, and the review and fix of the Render deployment configuration, and the agent skill under `skills/gittoknow/`.
 - **Antigravity** (Google): AI coding assistance used by team members during the event.
 - **OpenCode**: AI coding assistance used by team members during the event.
 - **Gemma 4** (Google, via the Gemini API): the AI *inside* the product (overview and chat answers), described under Models above. It is not used to write the code.
-- **Fallback model (optional):** if `FALLBACK_API_KEY` is set, xAI Grok (or another OpenAI-compatible model) answers only when Gemma 4 fails, and such answers are labelled. It is part of the running app, not a coding tool.
+- **Fallback model (optional):** if `FALLBACK_API_KEY` is set, `gpt-oss-120b` on Groq (or another OpenAI-compatible model) answers only when Gemma 4 fails, and such answers are labelled. It is part of the running app, not a coding tool.
 
 ## Quick start
 
@@ -75,7 +93,7 @@ uvicorn app.main:app --reload
 In `server/.env` set:
 
 - `GEMINI_API_KEY`: get one at https://aistudio.google.com/apikey (needed for the AI summary and chat)
-- `FALLBACK_API_KEY`: optional; enables a fallback model (xAI Grok by default) if Gemma 4 fails or runs out of quota. Leave empty to use Gemma 4 only
+- `FALLBACK_API_KEY`: optional; enables a fallback model (gpt-oss-120b on Groq by default; key from https://console.groq.com/keys) if Gemma 4 fails or runs out of quota. Leave empty to use Gemma 4 only
 - `GITHUB_TOKEN`: optional but recommended; without it GitHub allows only 60 requests per hour (a token with no scopes is enough for public repos)
 
 **Client** (http://localhost:5173)
@@ -126,6 +144,8 @@ server/app/
     llm/               Gemini API client (Gemma 4), prompts, overview
     rag/               chunking, paced indexing, retrieval, chat
     store.py           in-memory repo store
+
+skills/gittoknow/      agent skill (SKILL.md, scripts/, references/)
 
 client/src/
   api/                 fetch client + one module per server resource
