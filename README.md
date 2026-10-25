@@ -42,6 +42,31 @@ npm run dev
 
 The header badge shows **API online** when the client can reach the server.
 
+## Deploy to Render
+
+Deploy this project to Render in one click:
+
+[![Deploy to Render](https://render.com/images/deploy-button.svg)](https://render.com/new)
+
+**Steps:**
+
+1. Click the "Deploy to Render" button above or go to [dashboard.render.com](https://dashboard.render.com) → New Web Service
+2. Select your GitHub repository (`white-shn/GitToKnow`)
+3. Configure:
+   - **Root directory**: `/`
+   - **Build command**: `pip install -r requirements.txt`
+   - **Start command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Environment**: Python
+   - **Plan**: Free
+4. Set environment variables in the Render dashboard:
+   - `GITHUB_TOKEN`: (optional) GitHub API token
+   - `GEMINI_API_KEY`: Gemini API key for Gemma 4
+5. **Deploy!** Your service will be available at `https://your-service-name.onrender.com`
+
+The server will auto-start on deployment and handle GitHub API requests and AI-powered repository analysis.
+
+**Note**: The client (React frontend) would need its own Render service if you want a complete deployment. See the client directory for additional deployment options.
+
 ## Project layout
 
 ```
