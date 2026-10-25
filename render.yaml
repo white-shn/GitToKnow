@@ -35,6 +35,11 @@ services:
     branch: main
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    # Client-side routes (/summary, /structure, /map, /ask) must fall back to index.html on refresh or deep links.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: NODE_VERSION
         value: 22.12.0
