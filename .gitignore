@@ -14,3 +14,7 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+*.err

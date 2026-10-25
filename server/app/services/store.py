@@ -1,4 +1,4 @@
-"""In-memory store for analysed repositories (no database). Keyed by repo_id = "owner/repo"."""
+"""In-memory store for analysed repositories (no database). Keyed by repo_id = "owner/repo" (case-insensitive)."""
 
 from dataclasses import dataclass, field
 
@@ -17,9 +17,13 @@ class RepoRecord:
 _repos: dict[str, RepoRecord] = {}
 
 
+def _key(repo_id: str) -> str:
+    return repo_id.lower()  # GitHub owner/repo names are case-insensitive
+
+
 def save(repo_id: str, record: RepoRecord) -> None:
-    _repos[repo_id] = record
+    _repos[_key(repo_id)] = record
 
 
 def get(repo_id: str) -> RepoRecord | None:
-    return _repos.get(repo_id)
+    return _repos.get(_key(repo_id))

@@ -23,6 +23,8 @@ Put your name next to a stream so nobody builds the same thing.
 | E | **Client: architecture graph + chat UI** | | `client/src/features/architecture/`, `features/chat/`, `api/chat.js` |
 
 ### A. GitHub fetch + analysis
+**Status: done** (branch `feat/repo-analysis`). Run it for real with `USE_MOCK_DATA=false` in `server/.env`. `services/analysis/analyzer.py` is the orchestrator; it already calls `graph.build_graph` (a stub for stream B to fill in). Fetched files live in `store.RepoRecord.files`, which streams B and C read from. Stream C: `analyze` leaves `index_status="pending"`, so start indexing after `store.save(...)` in `api/routes/repos.py`. Real `overview` is still 501 until stream C ships.
+
 - Fetch metadata (`GET /repos/{o}/{r}`) and download the **zipball once**, extracting text files in memory into `store.RepoRecord.files`. Skip binaries, `node_modules`, `.git`, lockfiles, files over ~200 KB; cap ~1500 files. Use `GITHUB_TOKEN` if set. Turn 404/403/rate-limit into `HTTPException` with a clear `detail`.
 - `tree.py` nested tree, `languages.py` extension to language counts, `detect.py` frameworks and dependencies (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `pom.xml`), `classify.py` into frontend/backend/config/tests/docs/other, `important.py` entry points, routing and config files with a short `reason`.
 
