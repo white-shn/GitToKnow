@@ -28,10 +28,9 @@ const NAV_TABS = [
   { path: '/summary', label: 'AI Summary', icon: Sparkles },
   { path: '/structure', label: 'File Structure', icon: FolderTree },
   { path: '/map', label: 'Structure Map', icon: Network },
-  { path: '/ask', label: 'Ask the Repo', icon: MessagesSquare },
 ]
 
-export default function AppNavbar() {
+export default function AppNavbar({ chatOpen = false, onToggleChat }) {
   const apiStatus = useApiStatus()
   const { analysis, setAnalysis } = useRepo()
   const [showSwitchModal, setShowSwitchModal] = useState(false)
@@ -41,7 +40,7 @@ export default function AppNavbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between border-b border-border/70 bg-card/90 px-4 backdrop-blur-md">
+      <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-black/40 px-4 backdrop-blur-xl">
         {/* Left: Logo + Current Repo Badge */}
         <div className="flex items-center gap-3">
           <Link
@@ -106,8 +105,24 @@ export default function AppNavbar() {
           ))}
         </nav>
 
-        {/* Right: API Status Badge */}
+        {/* Right: chat toggle + API status */}
         <div className="flex items-center gap-2">
+          {meta && (
+            <button
+              type="button"
+              onClick={onToggleChat}
+              aria-pressed={chatOpen}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all sm:text-sm',
+                chatOpen
+                  ? 'border-primary/60 bg-primary/15 text-primary shadow-[0_0_18px_-4px_var(--primary)]'
+                  : 'border-white/10 text-muted-foreground hover:border-primary/40 hover:text-foreground',
+              )}
+            >
+              <MessagesSquare className="size-3.5 sm:size-4" />
+              Ask the Repo
+            </button>
+          )}
           {meta && (
             <Button
               variant="outline"
