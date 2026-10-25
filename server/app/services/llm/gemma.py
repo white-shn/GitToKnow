@@ -144,11 +144,16 @@ def _generate_fallback(prompt: str, system: str | None, max_output_tokens: int) 
     """One completion from the optional fallback model (OpenAI-compatible chat API)."""
     settings = get_settings()
     messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
+    payload = {"model": settings.fallback_model, "messages": messages, "max_tokens": max_output_tokens}
+    if settings.fallback_model.startswith("openai/gpt-oss"):
+        # GPT-OSS spends part of its completion budget on reasoning. Low effort leaves room for the
+        # concise replies this UI needs. Other models/providers may reject these fields, so send them only here.
+        payload.update(reasoning_effort="low", include_reasoning=False)
     try:
         resp = httpx.post(
             f"{settings.fallback_base_url.rstrip('/')}/chat/completions",
             headers={"Authorization": f"Bearer {settings.fallback_api_key}"},
-            json={"model": settings.fallback_model, "messages": messages, "max_tokens": max_output_tokens},
+            json=payload,
             timeout=120.0,
         )
         resp.raise_for_status()
@@ -159,6 +164,17 @@ def _generate_fallback(prompt: str, system: str | None, max_output_tokens: int) 
     if not text:
         raise LLMError(502, "The fallback model returned an empty response.")
     return text
+
+
+def generate_with_fallback_model(prompt: str, system: str | None = None, max_output_tokens: int = 4096) -> str:
+    """Call the configured OpenAI-compatible provider directly (Groq by default).
+
+    This is for features that intentionally select the fallback provider rather than
+    using Gemma first. It shares the same environment configuration as `generate()`.
+    """
+    if not get_settings().fallback_api_key:
+        raise LLMError(503, "FALLBACK_API_KEY is not set. Add a Groq API key to server/.env and restart the server.")
+    return _generate_fallback(prompt, system, max_output_tokens)
 
 
 def generate(prompt: str, system: str | None = None, temperature: float = 0.2, max_output_tokens: int = 4096) -> str:

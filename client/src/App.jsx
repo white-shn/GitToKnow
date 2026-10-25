@@ -4,6 +4,7 @@ import RepoProvider from '@/features/repo-analysis/RepoProvider'
 import AiSummaryPage from '@/pages/AiSummaryPage'
 import FileStructurePage from '@/pages/FileStructurePage'
 import StructureMapPage from '@/pages/StructureMapPage'
+import PullRequestReviewPage from '@/pages/PullRequestReviewPage'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="map" element={<StructureMapPage />} />
             <Route path="structure-map" element={<Navigate to="/map" replace />} />
             <Route path="architecture" element={<Navigate to="/map" replace />} />
+            <Route path="pull-requests" element={<PullRequestReviewPage />} />
 
             <Route path="ask" element={<Navigate to="/summary" replace />} />
             <Route path="ask-the-repo" element={<Navigate to="/ask" replace />} />
